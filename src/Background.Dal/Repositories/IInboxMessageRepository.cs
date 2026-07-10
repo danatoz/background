@@ -16,5 +16,7 @@ public interface IInboxMessageRepository
     Task MarkFailedAsync(
         Guid id, string error, TimeSpan? retryDelay = null, CancellationToken ct = default);
 
+    void Attach(InboxMessage message);
+
     Task SaveChangesAsync(CancellationToken ct = default);
 }

@@ -31,12 +31,6 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
         builder.Property(x => x.PipelineVersion)
             .HasMaxLength(20);
 
-        builder.Property(x => x.PromptVersion)
-            .HasMaxLength(20);
-
-        builder.Property(x => x.ModelName)
-            .HasMaxLength(100);
-
         builder.Property(x => x.RetryCount)
             .IsRequired()
             .HasDefaultValue(0);
@@ -57,6 +51,13 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
 
         builder.Property(x => x.LastError)
             .HasMaxLength(4000);
+
+        builder.Property(x => x.PromptId);
+
+        builder.HasOne(x => x.Prompt)
+            .WithMany()
+            .HasForeignKey(x => x.PromptId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.NextRetryAt);

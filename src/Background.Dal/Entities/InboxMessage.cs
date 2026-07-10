@@ -22,8 +22,8 @@ public class InboxMessage
     public string? LastStep { get; set; }
     public string? ArtifactPrefix { get; set; }
     public string? PipelineVersion { get; set; }
-    public string? PromptVersion { get; set; }
-    public string? ModelName { get; set; }
+    public Guid? PromptId { get; set; }
+    public Prompt? Prompt { get; set; }
     public int RetryCount { get; set; }
     public DateTime? NextRetryAt { get; set; }
     public DateTime? LockedUntil { get; set; }

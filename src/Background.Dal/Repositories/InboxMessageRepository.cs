@@ -43,7 +43,8 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                 WHERE "Id" IN (
                     SELECT "Id" FROM "Messages"
                     WHERE ("Status" = {statusPending}::message_status
-                        OR ("Status" = {statusFailed}::message_status AND "NextRetryAt" <= {now}))
+                        OR ("Status" = {statusFailed}::message_status AND "NextRetryAt" <= {now})
+                        OR ("Status" = {statusProcessing}::message_status AND "LockedUntil" <= {now}))
                       AND ("LockedUntil" IS NULL OR "LockedUntil" <= {now})
                     ORDER BY "CreatedAt" ASC
                     LIMIT {batchSize}
@@ -84,6 +85,11 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                     .SetProperty(m => m.WorkerId, (string?)null)
                     .SetProperty(m => m.NextRetryAt, retryDelay.HasValue ? now.Add(retryDelay.Value) : (DateTime?)null),
                 ct);
+    }
+
+    public void Attach(InboxMessage message)
+    {
+        _context.Messages.Attach(message);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default)

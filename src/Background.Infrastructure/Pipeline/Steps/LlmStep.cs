@@ -7,11 +7,13 @@ namespace Background.Infrastructure.Pipeline.Steps;
 public sealed class LlmStep : IProcessingStep
 {
     private readonly IStorageService _storage;
+    private readonly PromptService _promptService;
     private readonly ILogger<LlmStep> _logger;
 
-    public LlmStep(IStorageService storage, ILogger<LlmStep> logger)
+    public LlmStep(IStorageService storage, PromptService promptService, ILogger<LlmStep> logger)
     {
         _storage = storage;
+        _promptService = promptService;
         _logger = logger;
     }
 
@@ -22,10 +24,19 @@ public sealed class LlmStep : IProcessingStep
     {
         try
         {
-            context.Prompt = BuildPrompt(context.PreprocessedContent ?? string.Empty);
+            var prompt = await _promptService.GetActiveAsync("inbox-classification", ct);
+            if (prompt is null)
+            {
+                _logger.LogError("Active prompt 'inbox-classification' not found");
+                return ProcessingStepResult.Fail("Active prompt 'inbox-classification' not found");
+            }
+
+            message.PromptId = prompt.Id;
+            var rendered = prompt.Content.Replace("{{content}}", context.PreprocessedContent ?? context.RawContent);
+            context.Prompt = rendered;
 
             var promptKey = ArtifactPathBuilder.Prompt(context.ArtifactPrefix);
-            await _storage.SaveAsync(promptKey, context.Prompt, "text/markdown", ct);
+            await _storage.SaveAsync(promptKey, rendered, "text/markdown", ct);
 
             // TODO: Replace with actual LLM call
             context.LlmResponse = $$"""
@@ -37,7 +48,7 @@ public sealed class LlmStep : IProcessingStep
                   "due_date": null
                 }
                 """;
-
+            await Task.Delay(30000, ct);
             var responseKey = ArtifactPathBuilder.LlmResponse(context.ArtifactPrefix);
             await _storage.SaveAsync(responseKey, context.LlmResponse, "application/json", ct);
 
@@ -49,21 +60,5 @@ public sealed class LlmStep : IProcessingStep
             _logger.LogError(ex, "LLM step failed for {MessageId}", message.Id);
             return ProcessingStepResult.Fail(ex.Message);
         }
-    }
-
-    private static string BuildPrompt(string content)
-    {
-        return $"""
-            Analyze the following message and extract structured information.
-            Return a JSON object with:
-            - summary: brief summary of the message
-            - category: one of [invoice, support, newsletter, meeting, other]
-            - priority: one of [low, normal, high, urgent]
-            - is_action_required: boolean
-            - due_date: ISO date string or null
-
-            Message:
-            {content}
-            """;
     }
 }

@@ -31,6 +31,8 @@ public static class InfrastructureRegistration
 
         services.AddSingleton<IStorageService, S3StorageService>();
 
+        services.AddScoped<PromptService>();
+
         services.AddScoped<IProcessingStep, RawStorageStep>();
         services.AddScoped<IProcessingStep, PreprocessingStep>();
         services.AddScoped<IProcessingStep, LlmStep>();

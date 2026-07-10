@@ -10,6 +10,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     }
 
     public DbSet<InboxMessage> Messages => Set<InboxMessage>();
+    public DbSet<Prompt> Prompts => Set<Prompt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

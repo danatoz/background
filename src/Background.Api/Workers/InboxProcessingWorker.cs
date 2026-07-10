@@ -7,6 +7,8 @@ namespace Background.Api.Workers;
 
 public class InboxProcessingWorker : BackgroundService
 {
+    private static readonly SemaphoreSlim _semaphore = new(5, 5);
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<InboxProcessingWorker> _logger;
     private readonly string _workerId;
@@ -46,7 +48,7 @@ public class InboxProcessingWorker : BackgroundService
                 _logger.LogInformation(
                     "Claimed {Count} messages for processing", messages.Count);
 
-                var processingTasks = messages.Select(msg => ProcessMessageAsync(scope, repo, msg, stoppingToken));
+                var processingTasks = messages.Select(msg => ProcessMessageAsync(msg, stoppingToken));
                 await Task.WhenAll(processingTasks);
             }
             catch (OperationCanceledException)
@@ -64,31 +66,41 @@ public class InboxProcessingWorker : BackgroundService
     }
 
     private async Task ProcessMessageAsync(
-        IServiceScope scope,
-        IInboxMessageRepository repo,
         InboxMessage message,
         CancellationToken ct)
     {
+        await _semaphore.WaitAsync(ct);
         try
         {
-            message.ArtifactPrefix ??= ArtifactPathBuilder.BuildPrefix("emails", message.Id);
-            message.PipelineVersion ??= "1.0";
+            using var scope = _scopeFactory.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
+            repo.Attach(message);
 
-            var orchestrator = scope.ServiceProvider.GetRequiredService<PipelineOrchestrator>();
-            await orchestrator.RunAsync(message, ct);
+            try
+            {
+                message.ArtifactPrefix ??= ArtifactPathBuilder.BuildPrefix("emails", message.Id);
+                message.PipelineVersion ??= "1.0";
+
+                var orchestrator = scope.ServiceProvider.GetRequiredService<PipelineOrchestrator>();
+                await orchestrator.RunAsync(message, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Message {MessageId} processing failed", message.Id);
+
+                var retryDelay = TimeSpan.FromSeconds(
+                    Math.Pow(2, Math.Min(message.RetryCount, 5)) * 10);
+
+                await repo.MarkFailedAsync(message.Id, ex.Message, retryDelay, ct);
+            }
         }
-        catch (OperationCanceledException)
+        finally
         {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Message {MessageId} processing failed", message.Id);
-
-            var retryDelay = TimeSpan.FromSeconds(
-                Math.Pow(2, Math.Min(message.RetryCount, 5)) * 10);
-
-            await repo.MarkFailedAsync(message.Id, ex.Message, retryDelay, ct);
+            _semaphore.Release();
         }
     }
 }
