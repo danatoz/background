@@ -68,8 +68,7 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                 SET "Status" = {statusProcessing}::message_status,
                     "WorkerId" = {workerId},
                     "LockedUntil" = {lockedUntil},
-                    "StartedAt" = {now},
-                    "RetryCount" = "RetryCount" + 1
+                    "StartedAt" = {now}
                 WHERE "Id" IN (
                     SELECT "Id" FROM "Messages"
                     WHERE ("Status" = {statusPending}::message_status
@@ -110,6 +109,7 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                 setters => setters
                     .SetProperty(m => m.Status, MessageStatus.Failed)
                     .SetProperty(m => m.LastError, error)
+                    .SetProperty(m => m.RetryCount, m => m.RetryCount + 1)
                     .SetProperty(m => m.CompletedAt, now)
                     .SetProperty(m => m.LockedUntil, (DateTime?)null)
                     .SetProperty(m => m.WorkerId, (string?)null)
