@@ -4,7 +4,6 @@ namespace Background.Api.Models;
 
 public record MessageDetailResponse(
     Guid Id,
-    string Payload,
     string Status,
     int RetryCount,
     string? LastStep,
@@ -19,7 +18,6 @@ public record MessageDetailResponse(
 {
     private static readonly Dictionary<string, string[]> ArtifactsByStep = new()
     {
-        ["RawStorage"] = new[] { "raw.json" },
         ["Preprocessing"] = new[] { "raw.json", "preprocessed.md" },
         ["Llm"] = new[] { "raw.json", "preprocessed.md", "prompt.md", "response.json" },
         ["Validation"] = new[] { "raw.json", "preprocessed.md", "prompt.md", "response.json" },
@@ -53,7 +51,7 @@ public record MessageDetailResponse(
         }
 
         return new(
-            m.Id, m.Payload, m.Status.ToString(), m.RetryCount,
+            m.Id, m.Status.ToString(), m.RetryCount,
             m.LastStep, m.LastError, m.PipelineVersion, m.PromptId,
             m.CreatedAt, m.StartedAt, m.CompletedAt,
             m.StartedAt.HasValue && m.CompletedAt.HasValue

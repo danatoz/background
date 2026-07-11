@@ -32,16 +32,21 @@ public sealed class PipelineOrchestrator
     {
         var context = new PipelineContext
         {
-            ArtifactPrefix = message.ArtifactPrefix ?? string.Empty,
-            RawContent = message.Payload
+            ArtifactPrefix = message.ArtifactPrefix ?? string.Empty
         };
 
         var startIndex = FindStartIndex(message.LastStep);
 
-        if (startIndex > LlmStepIndex && !string.IsNullOrEmpty(context.ArtifactPrefix))
+        if (!string.IsNullOrEmpty(context.ArtifactPrefix))
         {
-            var responseKey = ArtifactPathBuilder.LlmResponse(context.ArtifactPrefix);
-            context.LlmResponse = await _storage.GetAsync(responseKey, ct);
+            var rawKey = ArtifactPathBuilder.Raw(context.ArtifactPrefix);
+            context.RawContent = await _storage.GetAsync(rawKey, ct) ?? string.Empty;
+
+            if (startIndex > LlmStepIndex)
+            {
+                var responseKey = ArtifactPathBuilder.LlmResponse(context.ArtifactPrefix);
+                context.LlmResponse = await _storage.GetAsync(responseKey, ct);
+            }
         }
 
         for (var i = startIndex; i < _steps.Count; i++)
@@ -98,7 +103,6 @@ public static class KnownSteps
 {
     public static readonly string[] All =
     [
-        "RawStorage",
         "Preprocessing",
         "Llm",
         "Validation",

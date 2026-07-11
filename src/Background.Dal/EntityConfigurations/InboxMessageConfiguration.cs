@@ -15,10 +15,6 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
         builder.Property(x => x.Id)
             .ValueGeneratedOnAdd();
 
-        builder.Property(x => x.Payload)
-            .IsRequired()
-            .HasColumnType("text");
-
         builder.Property(x => x.Status)
             .IsRequired();
 

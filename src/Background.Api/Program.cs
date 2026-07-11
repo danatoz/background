@@ -95,15 +95,22 @@ app.MapPost("/messages", async (
     CreateMessageRequest request,
     IInboxMessageRepository repo,
     IUnitOfWork uow,
+    IStorageService storage,
     CancellationToken ct) =>
 {
     if (!request.IsValid())
         return Results.BadRequest(new { error = "Payload is required" });
 
+    var messageId = Guid.NewGuid();
+    var prefix = ArtifactPathBuilder.BuildPrefix("emails", messageId);
+    var rawKey = ArtifactPathBuilder.Raw(prefix);
+
+    await storage.SaveAsync(rawKey, request.Payload, "application/json", ct);
+
     var message = new InboxMessage
     {
-        Id = Guid.NewGuid(),
-        Payload = request.Payload,
+        Id = messageId,
+        ArtifactPrefix = prefix,
         Status = MessageStatus.Pending,
         RetryCount = 0,
         CreatedAt = DateTime.UtcNow
@@ -267,11 +274,11 @@ app.MapGet("/messages/{id:guid}/artifacts/{fileName}", async (
 
     var contentType = fileName switch
     {
-        "raw.json" => "application/json",
-        "preprocessed.md" => "text/markdown",
-        "prompt.md" => "text/markdown",
-        "response.json" => "application/json",
-        "processed.json" => "application/json",
+        "raw.json" => "application/json; charset=utf-8",
+        "preprocessed.md" => "text/plain; charset=utf-8",
+        "prompt.md" => "text/plain; charset=utf-8",
+        "response.json" => "application/json; charset=utf-8",
+        "processed.json" => "application/json; charset=utf-8",
         _ => "application/octet-stream"
     };
 

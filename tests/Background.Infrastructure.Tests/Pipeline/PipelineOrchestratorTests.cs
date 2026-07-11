@@ -33,7 +33,7 @@ public sealed class PipelineOrchestratorTests
     }
 
     [Fact]
-    public async Task RunAsync_RunsAllFiveSteps_WhenStartingFresh()
+    public async Task RunAsync_RunsAllFourSteps_WhenStartingFresh()
     {
         var stepsRun = new List<string>();
         var orch = CreateOrchestrator((step, _) =>
@@ -43,7 +43,7 @@ public sealed class PipelineOrchestratorTests
                 .AndDoes(_ => stepsRun.Add(step.StepName));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}" };
+        var message = new InboxMessage { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -65,13 +65,12 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
-            Payload = "{}",
-            LastStep = "RawStorage"
+            LastStep = "Preprocessing"
         };
 
         await orch.RunAsync(message, CancellationToken.None);
 
-        Assert.Equal(["Preprocessing", "Llm", "Validation", "Complete"], stepsRun);
+        Assert.Equal(["Llm", "Validation", "Complete"], stepsRun);
         await _repository.Received(1).MarkCompletedAsync(message.Id, Arg.Any<CancellationToken>());
     }
 
@@ -95,13 +94,12 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
-            Payload = "{}",
             RetryCount = 0
         };
 
         await orch.RunAsync(message, CancellationToken.None);
 
-        Assert.Equal(["RawStorage", "Preprocessing", "Llm"], stepsRun);
+        Assert.Equal(["Preprocessing", "Llm"], stepsRun);
         await _repository.Received(1).MarkFailedAsync(
             message.Id,
             Arg.Is<string>(e => e.Contains("something went wrong")),
@@ -125,11 +123,11 @@ public sealed class PipelineOrchestratorTests
                 });
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}" };
+        var message = new InboxMessage { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
-        Assert.Equal(["RawStorage", "Preprocessing", "Llm", "Validation"], stepsRun);
+        Assert.Equal(["Preprocessing", "Llm", "Validation"], stepsRun);
         await _repository.Received(1).MarkFailedAsync(
             message.Id,
             Arg.Is<string>(e => e.Contains("Terminal failure")),
@@ -149,7 +147,6 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
-            Payload = "{}",
             RetryCount = 2
         };
 
@@ -171,7 +168,7 @@ public sealed class PipelineOrchestratorTests
                 .Returns(ProcessingStepResult.TerminalFail("fatal"));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}" };
+        var message = new InboxMessage { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -191,12 +188,13 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = messageId,
-            Payload = "{}",
             LastStep = "Llm",
             ArtifactPrefix = prefix
         };
 
-        _storage.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _storage.GetAsync(Arg.Is<string>(k => k.EndsWith("/raw.json")), Arg.Any<CancellationToken>())
+            .Returns("{}");
+        _storage.GetAsync(Arg.Is<string>(k => k.EndsWith("/response.json")), Arg.Any<CancellationToken>())
             .Returns("""{"client_name":"Test"}""");
 
         await orch.RunAsync(message, CancellationToken.None);
@@ -210,11 +208,11 @@ public sealed class PipelineOrchestratorTests
     public async Task RunAsync_SavesLastStepAfterEachStep()
     {
         var orch = CreateOrchestrator();
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}" };
+        var message = new InboxMessage { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
-        await _repository.Received(5).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _repository.Received(4).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -226,7 +224,7 @@ public sealed class PipelineOrchestratorTests
                 .Returns(ProcessingStepResult.Fail("fail"));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}" };
+        var message = new InboxMessage { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -240,13 +238,17 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
-            Payload = "{}",
             ArtifactPrefix = "emails/2026/07/11/someprefix"
         };
 
+        _storage.GetAsync(Arg.Is<string>(k => k.EndsWith("/raw.json")), Arg.Any<CancellationToken>())
+            .Returns("{}");
+
         await orch.RunAsync(message, CancellationToken.None);
 
-        await _storage.DidNotReceive().GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _storage.DidNotReceive().GetAsync(
+            Arg.Is<string>(k => k.EndsWith("/response.json")),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -256,7 +258,6 @@ public sealed class PipelineOrchestratorTests
         var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
-            Payload = "{}",
             LastStep = "Llm",
             ArtifactPrefix = null
         };
@@ -267,7 +268,7 @@ public sealed class PipelineOrchestratorTests
     }
 
     [Fact]
-    public async Task RunAsync_SetsContextArtifactPrefix_FromMessage()
+    public async Task RunAsync_SetsContextArtifactPrefixAndRawContent_FromMessage()
     {
         PipelineContext? captured = null;
         var orch = CreateOrchestrator((step, _) =>
@@ -277,12 +278,15 @@ public sealed class PipelineOrchestratorTests
         });
 
         var prefix = "emails/2026/07/11/abc";
-        var message = new InboxMessage { Id = Guid.NewGuid(), Payload = "{}", ArtifactPrefix = prefix };
+        var message = new InboxMessage { Id = Guid.NewGuid(), ArtifactPrefix = prefix };
+
+        _storage.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns("""{"subject":"Hello"}""");
 
         await orch.RunAsync(message, CancellationToken.None);
 
         Assert.NotNull(captured);
         Assert.Equal(prefix, captured!.ArtifactPrefix);
-        Assert.Equal("{}", captured.RawContent);
+        Assert.Equal("""{"subject":"Hello"}""", captured.RawContent);
     }
 }

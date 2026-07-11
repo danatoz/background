@@ -4,7 +4,6 @@ namespace Background.Api.Models;
 
 public record MessageResponse(
     Guid Id,
-    string Payload,
     string Status,
     int RetryCount,
     string? LastStep,
@@ -17,7 +16,7 @@ public record MessageResponse(
     double? ProcessingDurationSeconds)
 {
     public static MessageResponse From(InboxMessage m) => new(
-        m.Id, m.Payload, m.Status.ToString(), m.RetryCount,
+        m.Id, m.Status.ToString(), m.RetryCount,
         m.LastStep, m.LastError, m.PipelineVersion, m.PromptId,
         m.CreatedAt, m.StartedAt, m.CompletedAt,
         m.StartedAt.HasValue && m.CompletedAt.HasValue

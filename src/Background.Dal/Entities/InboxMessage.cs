@@ -17,7 +17,6 @@ public enum MessageStatus
 public class InboxMessage
 {
     public Guid Id { get; set; }
-    public string Payload { get; set; } = string.Empty;
     public MessageStatus Status { get; set; }
     public string? LastStep { get; set; }
     public string? ArtifactPrefix { get; set; }

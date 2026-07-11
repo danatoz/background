@@ -35,7 +35,6 @@ public static class InfrastructureRegistration
         services.AddSingleton<IActivePromptCache>(sp => sp.GetRequiredService<ActivePromptCache>());
         services.AddScoped<PromptService>();
 
-        services.AddScoped<IProcessingStep, RawStorageStep>();
         services.AddScoped<IProcessingStep, PreprocessingStep>();
         services.AddScoped<IProcessingStep, LlmStep>();
         services.AddScoped<IProcessingStep, ValidationStep>();
