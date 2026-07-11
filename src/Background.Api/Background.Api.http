@@ -1,6 +1,18 @@
 @Background.Api_HostAddress = http://localhost:5293
 
-GET {{Background.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+GET {{Background.Api_HostAddress}}/messages
+
+###
+
+POST {{Background.Api_HostAddress}}/messages
+Content-Type: application/json
+
+{
+  "payload": "Test message"
+}
+
+###
+
+GET {{Background.Api_HostAddress}}/health
 
 ###

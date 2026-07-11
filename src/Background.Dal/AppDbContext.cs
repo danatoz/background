@@ -9,6 +9,9 @@ public class AppDbContext : DbContext, IUnitOfWork
     {
     }
 
+    public Task<bool> CanConnectAsync(CancellationToken ct = default)
+        => Database.CanConnectAsync(ct);
+
     public DbSet<InboxMessage> Messages => Set<InboxMessage>();
     public DbSet<Prompt> Prompts => Set<Prompt>();
 

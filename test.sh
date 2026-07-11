@@ -1,4 +1,4 @@
-!bin/bash
+#!/bin/bash
 ITERATIONS=${1:-5}
 
 for ((i=1; i<=ITERATIONS; i++)); do

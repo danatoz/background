@@ -10,4 +10,5 @@ public class LlmOptions
     public double Temperature { get; init; } = 0.0;
     public int? MaxTokens { get; init; } = 1024;
     public bool UseStructuredOutput { get; init; } = true;
+    public string PromptName { get; init; } = "inbox-classification";
 }

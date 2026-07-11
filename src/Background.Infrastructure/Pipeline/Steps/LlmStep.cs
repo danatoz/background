@@ -36,11 +36,11 @@ public sealed class LlmStep : IProcessingStep
     {
         try
         {
-            var prompt = await _promptService.GetActiveAsync("inbox-classification", ct);
+            var prompt = await _promptService.GetActiveAsync(_options.PromptName, ct);
             if (prompt is null)
             {
-                _logger.LogError("Active prompt 'inbox-classification' not found");
-                return ProcessingStepResult.Fail("Active prompt 'inbox-classification' not found");
+                _logger.LogError("Active prompt '{PromptName}' not found", _options.PromptName);
+                return ProcessingStepResult.Fail($"Active prompt '{_options.PromptName}' not found");
             }
 
             message.PromptId = prompt.Id;

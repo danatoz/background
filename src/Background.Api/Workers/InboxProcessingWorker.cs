@@ -34,7 +34,7 @@ public class InboxProcessingWorker : BackgroundService
                 var repo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
 
                 var messages = await repo.ClaimMessagesAsync(
-                    batchSize: 10,
+                    batchSize: 5,
                     workerId: _workerId,
                     lockDuration: TimeSpan.FromMinutes(5),
                     ct: stoppingToken);

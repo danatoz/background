@@ -22,6 +22,36 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
         return await _context.Messages.FirstOrDefaultAsync(m => m.Id == id, ct);
     }
 
+    public async Task<MessageListResult> GetListAsync(
+        MessageStatus? status = null,
+        DateTime? createdFrom = null,
+        DateTime? createdTo = null,
+        int offset = 0,
+        int limit = 20,
+        CancellationToken ct = default)
+    {
+        var query = _context.Messages.AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(m => m.Status == status.Value);
+
+        if (createdFrom.HasValue)
+            query = query.Where(m => m.CreatedAt >= createdFrom.Value);
+
+        if (createdTo.HasValue)
+            query = query.Where(m => m.CreatedAt <= createdTo.Value);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(m => m.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+
+        return new MessageListResult(items, total);
+    }
+
     public async Task<List<InboxMessage>> ClaimMessagesAsync(
         int batchSize, string workerId, TimeSpan lockDuration, CancellationToken ct = default)
     {
@@ -84,6 +114,26 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                     .SetProperty(m => m.LockedUntil, (DateTime?)null)
                     .SetProperty(m => m.WorkerId, (string?)null)
                     .SetProperty(m => m.NextRetryAt, retryDelay.HasValue ? now.Add(retryDelay.Value) : (DateTime?)null),
+                ct);
+    }
+
+    public async Task ResetToPendingAsync(Guid id, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        await _context.Messages
+            .Where(m => m.Id == id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(m => m.Status, MessageStatus.Pending)
+                    .SetProperty(m => m.RetryCount, 0)
+                    .SetProperty(m => m.LastStep, (string?)null)
+                    .SetProperty(m => m.LastError, (string?)null)
+                    .SetProperty(m => m.NextRetryAt, (DateTime?)null)
+                    .SetProperty(m => m.LockedUntil, (DateTime?)null)
+                    .SetProperty(m => m.WorkerId, (string?)null)
+                    .SetProperty(m => m.StartedAt, (DateTime?)null)
+                    .SetProperty(m => m.CompletedAt, (DateTime?)null)
+                    .SetProperty(m => m.PromptId, (Guid?)null),
                 ct);
     }
 
