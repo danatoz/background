@@ -3,6 +3,7 @@ using Background.Dal.Repositories;
 using Background.Infrastructure.Pipeline;
 using Background.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Background.Infrastructure.Tests.Pipeline;
@@ -14,7 +15,8 @@ public sealed class PipelineOrchestratorTests
     private readonly ILogger<PipelineOrchestrator> _logger = Substitute.For<ILogger<PipelineOrchestrator>>();
 
     private PipelineOrchestrator CreateOrchestrator(
-        Action<IProcessingStep, int>? configureStep = null)
+        Action<IProcessingStep, int>? configureStep = null,
+        PipelineOptions? options = null)
     {
         var steps = KnownSteps.All.Select((name, i) =>
         {
@@ -29,7 +31,8 @@ public sealed class PipelineOrchestratorTests
             return step;
         });
 
-        return new PipelineOrchestrator(steps, _repository, _storage, _logger);
+        return new PipelineOrchestrator(steps, _repository, _storage, _logger,
+            Options.Create(options ?? new PipelineOptions()));
     }
 
     [Fact]
@@ -177,6 +180,43 @@ public sealed class PipelineOrchestratorTests
             Arg.Any<string>(),
             Arg.Is<TimeSpan?>(d => !d.HasValue),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunAsync_StopsImmediately_WhenRetryCountExceedsMax()
+    {
+        var orch = CreateOrchestrator(options: new PipelineOptions { MaxRetries = 3 });
+
+        var message = new ProcessingJob
+        {
+            Id = Guid.NewGuid(),
+            RetryCount = 3,
+            LastError = "previous error"
+        };
+
+        await orch.RunAsync(message, CancellationToken.None);
+
+        await _repository.Received(1).MarkFailedAsync(
+            message.Id,
+            Arg.Is<string>(e => e.Contains("max retries")),
+            Arg.Is<TimeSpan?>(d => !d.HasValue),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunAsync_ProceedsAsNormal_WhenRetryCountBelowMax()
+    {
+        var orch = CreateOrchestrator(options: new PipelineOptions { MaxRetries = 5 });
+
+        var message = new ProcessingJob
+        {
+            Id = Guid.NewGuid(),
+            RetryCount = 4
+        };
+
+        await orch.RunAsync(message, CancellationToken.None);
+
+        await _repository.Received(1).MarkCompletedAsync(message.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]

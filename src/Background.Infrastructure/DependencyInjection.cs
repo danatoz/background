@@ -16,6 +16,9 @@ public static class InfrastructureRegistration
         services.AddOptions<S3Options>()
             .Configure<IConfiguration>((opts, config) => config.GetSection(S3Options.Section).Bind(opts));
 
+        services.AddOptions<PipelineOptions>()
+            .Configure<IConfiguration>((opts, config) => config.GetSection(PipelineOptions.SectionName).Bind(opts));
+
         services.AddSingleton<IAmazonS3>(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<S3Options>>().Value;

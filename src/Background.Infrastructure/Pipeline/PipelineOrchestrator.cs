@@ -3,6 +3,7 @@ using Background.Dal.Entities;
 using Background.Dal.Repositories;
 using Background.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Background.Infrastructure.Pipeline;
 
@@ -12,6 +13,7 @@ public sealed class PipelineOrchestrator
     private readonly IProcessingJobRepository _repository;
     private readonly IStorageService _storage;
     private readonly ILogger<PipelineOrchestrator> _logger;
+    private readonly PipelineOptions _options;
 
     private static readonly int LlmStepIndex = Array.IndexOf(KnownSteps.All, "Llm");
 
@@ -19,13 +21,15 @@ public sealed class PipelineOrchestrator
         IEnumerable<IProcessingStep> steps,
         IProcessingJobRepository repository,
         IStorageService storage,
-        ILogger<PipelineOrchestrator> logger)
+        ILogger<PipelineOrchestrator> logger,
+        IOptions<PipelineOptions> options)
     {
         _steps = steps.OrderBy(s => Array.IndexOf(
             KnownSteps.All, s.StepName)).ToList();
         _repository = repository;
         _storage = storage;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task RunAsync(ProcessingJob message, CancellationToken ct)
@@ -36,6 +40,19 @@ public sealed class PipelineOrchestrator
         };
 
         var startIndex = FindStartIndex(message.LastStep);
+
+        if (message.RetryCount >= _options.MaxRetries)
+        {
+            _logger.LogError(
+                "Message {MessageId} exceeded max retries ({MaxRetries}): {Error}",
+                message.Id, _options.MaxRetries, message.LastError);
+
+            await _repository.MarkFailedAsync(
+                message.Id,
+                $"Terminal failure: max retries ({_options.MaxRetries}) exceeded: {message.LastError}",
+                ct: ct);
+            return;
+        }
 
         if (!string.IsNullOrEmpty(context.ArtifactPrefix))
         {
