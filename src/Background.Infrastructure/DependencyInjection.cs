@@ -31,6 +31,7 @@ public static class InfrastructureRegistration
 
         services.AddSingleton<IStorageService, S3StorageService>();
 
+        services.AddSingleton<ActivePromptCache>();
         services.AddScoped<PromptService>();
 
         services.AddScoped<IProcessingStep, RawStorageStep>();

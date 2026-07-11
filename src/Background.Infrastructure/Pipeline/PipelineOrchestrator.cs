@@ -10,16 +10,21 @@ public sealed class PipelineOrchestrator
 {
     private readonly IReadOnlyList<IProcessingStep> _steps;
     private readonly IInboxMessageRepository _repository;
+    private readonly IStorageService _storage;
     private readonly ILogger<PipelineOrchestrator> _logger;
+
+    private static readonly int LlmStepIndex = Array.IndexOf(KnownSteps.All, "Llm");
 
     public PipelineOrchestrator(
         IEnumerable<IProcessingStep> steps,
         IInboxMessageRepository repository,
+        IStorageService storage,
         ILogger<PipelineOrchestrator> logger)
     {
         _steps = steps.OrderBy(s => Array.IndexOf(
             KnownSteps.All, s.StepName)).ToList();
         _repository = repository;
+        _storage = storage;
         _logger = logger;
     }
 
@@ -32,6 +37,12 @@ public sealed class PipelineOrchestrator
         };
 
         var startIndex = FindStartIndex(message.LastStep);
+
+        if (startIndex > LlmStepIndex && !string.IsNullOrEmpty(context.ArtifactPrefix))
+        {
+            var responseKey = ArtifactPathBuilder.LlmResponse(context.ArtifactPrefix);
+            context.LlmResponse = await _storage.GetAsync(responseKey, ct);
+        }
 
         for (var i = startIndex; i < _steps.Count; i++)
         {

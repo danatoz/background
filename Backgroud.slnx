@@ -8,6 +8,6 @@
   </Folder>
   <Folder Name="/build/">
     <File Path="docker-compose.yml" />
-    
+    <File Path="AGENTS.md"/>
   </Folder>
 </Solution>

@@ -7,18 +7,12 @@ namespace Background.Infrastructure.Storage;
 public class PromptService
 {
     private readonly AppDbContext _db;
+    private readonly ActivePromptCache _cache;
 
-    public PromptService(AppDbContext db)
+    public PromptService(AppDbContext db, ActivePromptCache cache)
     {
         _db = db;
-    }
-
-    public async Task<Prompt?> GetActiveAsync(string name, CancellationToken ct = default)
-    {
-        return await _db.Prompts
-            .Where(p => p.Name == name && p.IsActive)
-            .OrderByDescending(p => p.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        _cache = cache;
     }
 
     public Task<List<Prompt>> GetAllAsync(CancellationToken ct = default)
@@ -37,8 +31,13 @@ public class PromptService
     {
         prompt.Id = Guid.NewGuid();
         prompt.CreatedAt = DateTime.UtcNow;
+
+        if (prompt.IsActive)
+            await DeactivateOthersAsync(prompt.Name, null, ct);
+
         _db.Prompts.Add(prompt);
         await _db.SaveChangesAsync(ct);
+        _cache.Invalidate(prompt.Name);
         return prompt;
     }
 
@@ -50,9 +49,25 @@ public class PromptService
         existing.SystemPrompt = updated.SystemPrompt;
         existing.ModelName = updated.ModelName;
         existing.Temperature = updated.Temperature;
+
+        if (updated.IsActive && !existing.IsActive)
+            await DeactivateOthersAsync(existing.Name, existing.Id, ct);
+
         existing.IsActive = updated.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+        _cache.Invalidate(existing.Name);
         return existing;
+    }
+
+    private async Task DeactivateOthersAsync(string name, Guid? excludeId, CancellationToken ct)
+    {
+        var others = await _db.Prompts
+            .Where(p => p.Name == name && p.IsActive)
+            .Where(p => excludeId == null || p.Id != excludeId)
+            .ToListAsync(ct);
+
+        foreach (var p in others)
+            p.IsActive = false;
     }
 }

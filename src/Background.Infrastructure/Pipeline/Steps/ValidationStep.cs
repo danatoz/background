@@ -26,15 +26,26 @@ public sealed class ValidationStep : IProcessingStep
             using var doc = JsonDocument.Parse(context.LlmResponse);
             var root = doc.RootElement;
 
-            if (!root.TryGetProperty("summary", out _))
-                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing 'summary' field in LLM response"));
+            if (!root.TryGetProperty("client_name", out var clientName) || clientName.GetString() is null)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'client_name' field"));
 
-            if (!root.TryGetProperty("category", out var category) || category.GetString() is null)
-                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'category' field"));
+            if (!root.TryGetProperty("client_inn", out var clientInn) || clientInn.GetString() is null)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'client_inn' field"));
 
-            var validCategories = new[] { "invoice", "support", "newsletter", "meeting", "other" };
-            if (!validCategories.Contains(category.GetString()))
-                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail($"Invalid category: {category.GetString()}"));
+            if (!root.TryGetProperty("document_type", out var docType) || docType.GetString() is null)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'document_type' field"));
+
+            if (!root.TryGetProperty("delivery_amount", out var amount) || amount.ValueKind != JsonValueKind.Object)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'delivery_amount' field"));
+
+            if (!amount.TryGetProperty("value", out var value) || value.ValueKind != JsonValueKind.Number)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'delivery_amount.value' field"));
+
+            if (!amount.TryGetProperty("currency", out var currency) || currency.GetString() is null)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'delivery_amount.currency' field"));
+
+            if (!root.TryGetProperty("confidence", out var confidence) || confidence.ValueKind != JsonValueKind.Number)
+                return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.Fail("Missing or invalid 'confidence' field"));
 
             context.ProcessedJson = context.LlmResponse;
 

@@ -218,4 +218,68 @@ app.MapPost("/messages/{id:guid}/restart", async (
 .WithSummary("Restart message processing")
 .WithDescription("Resets a message to pending status so the worker re-processes it from scratch.");
 
+app.MapGet("/messages/{id:guid}", async (
+    Guid id,
+    IInboxMessageRepository repo,
+    CancellationToken ct) =>
+{
+    var message = await repo.GetByIdAsync(id, ct);
+    if (message is null)
+        return Results.NotFound(new { error = "Message not found" });
+
+    return Results.Ok(MessageDetailResponse.From(message));
+})
+.WithTags("Messages")
+.WithName("GetMessageById")
+.WithSummary("Get message details with artifacts")
+.WithDescription("Returns a single message with its available artifact files.");
+
+app.MapGet("/messages/{id:guid}/artifacts/{fileName}", async (
+    Guid id,
+    string fileName,
+    IInboxMessageRepository repo,
+    IStorageService storage,
+    CancellationToken ct) =>
+{
+    var message = await repo.GetByIdAsync(id, ct);
+    if (message is null)
+        return Results.NotFound(new { error = "Message not found" });
+
+    if (message.ArtifactPrefix is null)
+        return Results.NotFound(new { error = "No artifacts available. Message has not been processed yet." });
+
+    var key = fileName switch
+    {
+        "raw.json" => ArtifactPathBuilder.Raw(message.ArtifactPrefix),
+        "preprocessed.md" => ArtifactPathBuilder.Preprocessed(message.ArtifactPrefix),
+        "prompt.md" => ArtifactPathBuilder.Prompt(message.ArtifactPrefix),
+        "response.json" => ArtifactPathBuilder.LlmResponse(message.ArtifactPrefix),
+        "processed.json" => ArtifactPathBuilder.Processed(message.ArtifactPrefix),
+        _ => null
+    };
+
+    if (key is null)
+        return Results.BadRequest(new { error = $"Unknown artifact: '{fileName}'. Valid: raw.json, preprocessed.md, prompt.md, response.json, processed.json" });
+
+    var content = await storage.GetAsync(key, ct);
+    if (content is null)
+        return Results.NotFound(new { error = "Artifact not found in storage" });
+
+    var contentType = fileName switch
+    {
+        "raw.json" => "application/json",
+        "preprocessed.md" => "text/markdown",
+        "prompt.md" => "text/markdown",
+        "response.json" => "application/json",
+        "processed.json" => "application/json",
+        _ => "application/octet-stream"
+    };
+
+    return Results.Content(content, contentType);
+})
+.WithTags("Messages")
+.WithName("GetMessageArtifact")
+.WithSummary("Get message artifact content")
+.WithDescription("Returns the content of a specific processing artifact by file name.");
+
 app.Run();

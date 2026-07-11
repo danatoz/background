@@ -10,20 +10,20 @@ namespace Background.Infrastructure.Pipeline.Steps;
 public sealed class LlmStep : IProcessingStep
 {
     private readonly IStorageService _storage;
-    private readonly PromptService _promptService;
+    private readonly ActivePromptCache _promptCache;
     private readonly ILlmService _llmService;
     private readonly LlmOptions _options;
     private readonly ILogger<LlmStep> _logger;
 
     public LlmStep(
         IStorageService storage,
-        PromptService promptService,
+        ActivePromptCache promptCache,
         ILlmService llmService,
         IOptions<LlmOptions> options,
         ILogger<LlmStep> logger)
     {
         _storage = storage;
-        _promptService = promptService;
+        _promptCache = promptCache;
         _llmService = llmService;
         _options = options.Value;
         _logger = logger;
@@ -36,7 +36,7 @@ public sealed class LlmStep : IProcessingStep
     {
         try
         {
-            var prompt = await _promptService.GetActiveAsync(_options.PromptName, ct);
+            var prompt = await _promptCache.GetActiveAsync(_options.PromptName, ct);
             if (prompt is null)
             {
                 _logger.LogError("Active prompt '{PromptName}' not found", _options.PromptName);
