@@ -1,3 +1,4 @@
+using Background.AI;
 using Background.Api.Workers;
 using Background.Dal;
 using Background.Dal.Entities;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddDal(builder.Configuration.GetConnectionString("Postgres")!);
 builder.Services.AddInfrastructure();
+builder.Services.AddAi(builder.Configuration);
 builder.Services.AddHostedService<InboxProcessingWorker>();
 
 var app = builder.Build();

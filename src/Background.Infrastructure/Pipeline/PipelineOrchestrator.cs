@@ -10,19 +10,16 @@ public sealed class PipelineOrchestrator
 {
     private readonly IReadOnlyList<IProcessingStep> _steps;
     private readonly IInboxMessageRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PipelineOrchestrator> _logger;
 
     public PipelineOrchestrator(
         IEnumerable<IProcessingStep> steps,
         IInboxMessageRepository repository,
-        IUnitOfWork unitOfWork,
         ILogger<PipelineOrchestrator> logger)
     {
         _steps = steps.OrderBy(s => Array.IndexOf(
             KnownSteps.All, s.StepName)).ToList();
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -44,9 +41,6 @@ public sealed class PipelineOrchestrator
                 "Running step {Step}/{Total} for message {MessageId}: {StepName}",
                 i + 1, _steps.Count, message.Id, step.StepName);
 
-            message.LastStep = step.StepName;
-            await _repository.SaveChangesAsync(ct);
-
             var result = await step.ExecuteAsync(message, context, ct);
 
             if (!result.IsSuccess)
@@ -60,22 +54,32 @@ public sealed class PipelineOrchestrator
                     await _repository.MarkFailedAsync(
                         message.Id, $"Terminal failure at {step.StepName}: {result.Error}", ct: ct);
                 }
+                else
+                {
+                    var retryDelay = TimeSpan.FromSeconds(
+                        Math.Pow(2, Math.Min(message.RetryCount, 5)) * 10);
+                    await _repository.MarkFailedAsync(
+                        message.Id, result.Error ?? "Unknown error", retryDelay, ct);
+                }
 
                 return;
             }
+
+            message.LastStep = step.StepName;
+            await _repository.SaveChangesAsync(ct);
         }
 
         await _repository.MarkCompletedAsync(message.Id, ct);
         _logger.LogInformation("Message {MessageId} pipeline completed", message.Id);
     }
 
-    private int FindStartIndex(string? currentStep)
+    private static int FindStartIndex(string? currentStep)
     {
         if (string.IsNullOrEmpty(currentStep))
             return 0;
 
         var index = Array.IndexOf(KnownSteps.All, currentStep);
-        return index >= 0 ? index : 0;
+        return index >= 0 ? index + 1 : 0;
     }
 }
 

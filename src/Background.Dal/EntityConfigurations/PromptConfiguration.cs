@@ -23,8 +23,13 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(x => x.Content)
             .IsRequired();
 
+        builder.Property(x => x.SystemPrompt);
+
         builder.Property(x => x.ModelName)
             .HasMaxLength(100);
+
+        builder.Property(x => x.Temperature)
+            .HasPrecision(3, 2);
 
         builder.Property(x => x.IsActive)
             .HasDefaultValue(false);

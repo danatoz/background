@@ -1,6 +1,7 @@
 <Solution>
   
   <Folder Name="/src/">
+    <Project Path="src/Background.AI/Background.AI.csproj" />
     <Project Path="src/Background.Api/Background.Api.csproj" />
     <Project Path="src/Background.Dal/Background.Dal.csproj" />
     <Project Path="src/Background.Infrastructure/Background.Infrastructure.csproj" />

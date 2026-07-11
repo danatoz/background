@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Background.AI\Background.AI.csproj" />
     <ProjectReference Include="..\Background.Dal\Background.Dal.csproj" />
   </ItemGroup>
 

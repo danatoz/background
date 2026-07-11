@@ -1,8 +1,11 @@
 !bin/bash
+ITERATIONS=${1:-5}
 
-for i in {1..5}; do
-    curl -v -X POST http://localhost:5293/messages \
-         -H "Content-Type: application/json" \
-         -d '{"payload": "hello"}'
+for ((i=1; i<=ITERATIONS; i++)); do
+	curl -v -X POST http://localhost:5293/messages \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "payload": "Уважаемые коллеги!\n\nНастоящим уведомляем вас о поставке товара от ООО «Зеленоглазое Такси» (ИНН 12345678901) на общую сумму 124 000 (Сто двадцать четыре тысячи) рублей.\n\nПросим принять информацию к сведению. По всем вопросам готовы предоставить необходимые документы.\n\nС уважением,\nООО «Зеленоглазое Такси»"
+	  }'
 done
 
