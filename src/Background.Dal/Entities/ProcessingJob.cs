@@ -2,7 +2,7 @@ using NpgsqlTypes;
 
 namespace Background.Dal.Entities;
 
-public enum MessageStatus
+public enum JobStatus
 {
     [PgName("pending")]
     Pending,
@@ -14,10 +14,10 @@ public enum MessageStatus
     Failed
 }
 
-public class InboxMessage
+public class ProcessingJob
 {
     public Guid Id { get; set; }
-    public MessageStatus Status { get; set; }
+    public JobStatus Status { get; set; }
     public string? LastStep { get; set; }
     public string? ArtifactPrefix { get; set; }
     public string? PipelineVersion { get; set; }

@@ -32,7 +32,7 @@ public sealed class LlmStep : IProcessingStep
     public string StepName => "Llm";
 
     public async Task<IProcessingStepResult> ExecuteAsync(
-        InboxMessage message, PipelineContext context, CancellationToken ct)
+        ProcessingJob message, PipelineContext context, CancellationToken ct)
     {
         try
         {

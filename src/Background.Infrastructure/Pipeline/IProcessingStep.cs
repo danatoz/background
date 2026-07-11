@@ -5,7 +5,7 @@ namespace Background.Infrastructure.Pipeline;
 public interface IProcessingStep
 {
     string StepName { get; }
-    Task<IProcessingStepResult> ExecuteAsync(InboxMessage message, PipelineContext context, CancellationToken ct);
+    Task<IProcessingStepResult> ExecuteAsync(ProcessingJob message, PipelineContext context, CancellationToken ct);
 }
 
 public interface IProcessingStepResult

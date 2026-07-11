@@ -9,7 +9,7 @@ namespace Background.Infrastructure.Pipeline;
 public sealed class PipelineOrchestrator
 {
     private readonly IReadOnlyList<IProcessingStep> _steps;
-    private readonly IInboxMessageRepository _repository;
+    private readonly IProcessingJobRepository _repository;
     private readonly IStorageService _storage;
     private readonly ILogger<PipelineOrchestrator> _logger;
 
@@ -17,7 +17,7 @@ public sealed class PipelineOrchestrator
 
     public PipelineOrchestrator(
         IEnumerable<IProcessingStep> steps,
-        IInboxMessageRepository repository,
+        IProcessingJobRepository repository,
         IStorageService storage,
         ILogger<PipelineOrchestrator> logger)
     {
@@ -28,7 +28,7 @@ public sealed class PipelineOrchestrator
         _logger = logger;
     }
 
-    public async Task RunAsync(InboxMessage message, CancellationToken ct)
+    public async Task RunAsync(ProcessingJob message, CancellationToken ct)
     {
         var context = new PipelineContext
         {

@@ -2,7 +2,7 @@ using Background.Dal.Entities;
 
 namespace Background.Api.Models;
 
-public record MessageResponse(
+public record JobResponse(
     Guid Id,
     string Status,
     int RetryCount,
@@ -15,7 +15,7 @@ public record MessageResponse(
     DateTime? CompletedAt,
     double? ProcessingDurationSeconds)
 {
-    public static MessageResponse From(InboxMessage m) => new(
+    public static JobResponse From(ProcessingJob m) => new(
         m.Id, m.Status.ToString(), m.RetryCount,
         m.LastStep, m.LastError, m.PipelineVersion, m.PromptId,
         m.CreatedAt, m.StartedAt, m.CompletedAt,

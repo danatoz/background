@@ -1,6 +1,6 @@
 namespace Background.Api.Models;
 
-public record CreateMessageRequest(string Payload)
+public record CreateJobRequest(string Payload)
 {
     public bool IsValid() => !string.IsNullOrWhiteSpace(Payload);
 }

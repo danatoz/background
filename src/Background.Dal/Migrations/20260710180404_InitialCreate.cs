@@ -21,7 +21,7 @@ namespace Background.Dal.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Payload = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<MessageStatus>(type: "message_status", nullable: false),
+                    Status = table.Column<JobStatus>(type: "message_status", nullable: false),
                     RetryCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     NextRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     LockedUntil = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

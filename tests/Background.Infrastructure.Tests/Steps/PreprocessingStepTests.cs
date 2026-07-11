@@ -27,7 +27,7 @@ public sealed class PreprocessingStepTests
             RawContent = "<p>Hello  <b>world</b></p><p>How are you?</p>"
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Hello worldHow are you?", context.PreprocessedContent);
@@ -48,7 +48,7 @@ public sealed class PreprocessingStepTests
             RawContent = "Just  a   plain text message"
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Just a plain text message", context.PreprocessedContent);
@@ -63,7 +63,7 @@ public sealed class PreprocessingStepTests
             RawContent = "   spaced out   "
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("spaced out", context.PreprocessedContent);
@@ -78,7 +78,7 @@ public sealed class PreprocessingStepTests
             RawContent = ""
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("", context.PreprocessedContent);
@@ -97,7 +97,7 @@ public sealed class PreprocessingStepTests
             RawContent = "some text"
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("disk full", result.Error);

@@ -2,7 +2,7 @@ using Background.Dal.Entities;
 
 namespace Background.Api.Models;
 
-public record MessageDetailResponse(
+public record JobDetailResponse(
     Guid Id,
     string Status,
     int RetryCount,
@@ -33,13 +33,13 @@ public record MessageDetailResponse(
         ["processed.json"] = "application/json",
     };
 
-    public static MessageDetailResponse From(InboxMessage m)
+    public static JobDetailResponse From(ProcessingJob m)
     {
         var artifacts = new List<ArtifactInfo>();
 
         if (m.ArtifactPrefix is not null)
         {
-            var fileNames = m.Status == MessageStatus.Completed
+            var fileNames = m.Status == JobStatus.Completed
                 ? ArtifactsByStep["Complete"]
                 : m.LastStep is not null && ArtifactsByStep.TryGetValue(m.LastStep, out var names)
                     ? names

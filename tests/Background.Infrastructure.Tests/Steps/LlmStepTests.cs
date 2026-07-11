@@ -56,7 +56,7 @@ public sealed class LlmStepTests
                 Duration = TimeSpan.FromMilliseconds(500)
             });
 
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
         var context = new PipelineContext
         {
             ArtifactPrefix = "emails/2026/07/11/abc",
@@ -90,7 +90,7 @@ public sealed class LlmStepTests
             .Returns((Prompt?)null);
 
         var result = await _step.ExecuteAsync(
-            new InboxMessage { Id = Guid.NewGuid() },
+            new ProcessingJob { Id = Guid.NewGuid() },
             new PipelineContext { ArtifactPrefix = "em/abc" },
             CancellationToken.None);
 
@@ -124,7 +124,7 @@ public sealed class LlmStepTests
         };
 
         var result = await _step.ExecuteAsync(
-            new InboxMessage { Id = Guid.NewGuid() },
+            new ProcessingJob { Id = Guid.NewGuid() },
             context,
             CancellationToken.None);
 
@@ -154,7 +154,7 @@ public sealed class LlmStepTests
         };
 
         var result = await _step.ExecuteAsync(
-            new InboxMessage { Id = Guid.NewGuid() },
+            new ProcessingJob { Id = Guid.NewGuid() },
             context,
             CancellationToken.None);
 
@@ -185,7 +185,7 @@ public sealed class LlmStepTests
         };
 
         var result = await _step.ExecuteAsync(
-            new InboxMessage { Id = Guid.NewGuid() },
+            new ProcessingJob { Id = Guid.NewGuid() },
             context,
             CancellationToken.None);
 
@@ -219,7 +219,7 @@ public sealed class LlmStepTests
             PreprocessedContent = "data"
         };
 
-        await _step.ExecuteAsync(new InboxMessage { Id = Guid.NewGuid() }, context, CancellationToken.None);
+        await _step.ExecuteAsync(new ProcessingJob { Id = Guid.NewGuid() }, context, CancellationToken.None);
 
         Assert.NotNull(captured);
         Assert.Equal(LlmResponseFormat.JsonObject, captured!.ResponseFormat);

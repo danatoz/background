@@ -1,10 +1,10 @@
 # Backgroud Inbox
 
-> Message processing pipeline with LLM classification. Accepts raw inbox messages, runs them through a multi-step pipeline (storage → preprocessing → LLM classification → validation → artifact storage), and tracks status in PostgreSQL.
+> Message processing pipeline with LLM classification. Accepts raw payloads, runs them through a multi-step pipeline (preprocessing → LLM classification → validation → artifact storage), and tracks processing status in PostgreSQL. Payloads are stored in S3 (MinIO), not in the database.
 
 ## Overview
 
-Backgroud Inbox is a .NET 10 web API that ingests messages (e.g., email bodies, notifications) and classifies them via an LLM. Each message flows through a resumable pipeline with artifacts stored in S3-compatible storage (MinIO). Built with Clean Architecture, EF Core, Semantic Kernel, and ASP.NET Core Minimal APIs.
+Backgroud Inbox is a .NET 10 web API that ingests messages (e.g., email bodies, notifications) and classifies them via an LLM. Each job flows through a resumable 4-step pipeline with artifacts stored in S3-compatible storage (MinIO). Built with Clean Architecture, EF Core, Semantic Kernel, and ASP.NET Core Minimal APIs.
 
 ## Requirements
 
@@ -46,20 +46,19 @@ API is available at `http://localhost:5293`. Scalar API reference at `/scalar`.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/messages` | List messages with filtering and pagination |
-| `POST` | `/messages` | Create a new message (queues for processing) |
-| `GET` | `/messages/{id}/restart` | Reset a failed message to pending |
-| `GET` | `/prompts` | List all prompt templates |
-| `POST` | `/prompts` | Create a new prompt template |
-| `GET` | `/prompts/{id}` | Get prompt template details |
-| `PUT` | `/prompts/{id}` | Update a prompt template |
+| `GET` | `/jobs` | List processing jobs with filtering and pagination |
+| `POST` | `/jobs` | Create a new processing job (payload saved to S3, queued for pipeline) |
+| `POST` | `/jobs/{id}/restart` | Reset a failed job to pending |
+| `GET` | `/jobs/{id}` | Get job details with available artifacts |
+| `GET` | `/jobs/{id}/artifacts/{fileName}` | Get artifact content (raw.json, preprocessed.md, etc.) |
+| `GET/POST/PUT` | `/prompts` | CRUD for LLM prompt templates |
 | `GET` | `/health` | Health check (DB connectivity) |
 | `GET` | `/scalar` | API reference UI |
 
-### Create a message
+### Create a job
 
 ```bash
-curl -X POST http://localhost:5293/messages \
+curl -X POST http://localhost:5293/jobs \
   -H "Content-Type: application/json" \
   -d '{"payload": "Invoice from vendor for $1,200"}'
 ```
@@ -76,15 +75,16 @@ src/
 
 ## Pipeline Steps
 
-Each message goes through 5 sequential steps:
+Each job goes through 4 sequential steps:
 
-1. **RawStorageStep** — Save raw payload to S3
-2. **PreprocessingStep** — Strip HTML, collapse whitespace
-3. **LlmStep** — Classify via LLM with active prompt template
-4. **ValidationStep** — Validate JSON response (summary + category)
-5. **CompleteStep** — Save processed artifact to S3
+1. **PreprocessingStep** — Strip HTML, collapse whitespace
+2. **LlmStep** — Classify via LLM with active prompt template
+3. **ValidationStep** — Validate JSON response (client info, document type, amount)
+4. **CompleteStep** — Save processed artifact to S3
 
-Failed messages are retried with exponential backoff (`2^min(retry,5) * 10s`).
+Failed jobs are retried with exponential backoff (`2^min(retry,5) * 10s`).
+
+Payload is saved to S3 on creation (POST `/jobs`) and loaded by the orchestrator before the first pipeline step.
 
 ## Testing
 

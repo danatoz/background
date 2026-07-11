@@ -16,7 +16,7 @@ public sealed class ValidationStep : IProcessingStep
     public string StepName => "Validation";
 
     public Task<IProcessingStepResult> ExecuteAsync(
-        InboxMessage message, PipelineContext context, CancellationToken ct)
+        ProcessingJob message, PipelineContext context, CancellationToken ct)
     {
         try
         {

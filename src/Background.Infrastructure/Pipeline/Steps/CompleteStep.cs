@@ -18,7 +18,7 @@ public sealed class CompleteStep : IProcessingStep
     public string StepName => "Complete";
 
     public async Task<IProcessingStepResult> ExecuteAsync(
-        InboxMessage message, PipelineContext context, CancellationToken ct)
+        ProcessingJob message, PipelineContext context, CancellationToken ct)
     {
         try
         {

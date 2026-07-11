@@ -23,7 +23,7 @@ builder.Services.AddOpenApi("v1", opt =>
 builder.Services.AddDal(builder.Configuration.GetConnectionString("Postgres")!);
 builder.Services.AddInfrastructure();
 builder.Services.AddAi(builder.Configuration);
-builder.Services.AddHostedService<InboxProcessingWorker>();
+builder.Services.AddHostedService<JobProcessingWorker>();
 
 var app = builder.Build();
 
@@ -53,8 +53,8 @@ app.MapGet("/health", async (IUnitOfWork uow, CancellationToken ct) =>
 .WithSummary("Health check endpoint")
 .WithDescription("Returns service health status. Checks database connectivity.");
 
-app.MapGet("/messages", async (
-    IInboxMessageRepository repo,
+app.MapGet("/jobs", async (
+    IProcessingJobRepository repo,
     CancellationToken ct,
     string? status = null,
     DateTime? createdFrom = null,
@@ -62,11 +62,11 @@ app.MapGet("/messages", async (
     int offset = 0,
     int limit = 20) =>
 {
-    MessageStatus? statusFilter = null;
+    JobStatus? statusFilter = null;
     if (status is not null)
     {
-        if (!Enum.TryParse<MessageStatus>(status, ignoreCase: true, out var parsed))
-            return Results.BadRequest(new { error = $"Invalid status. Valid: {string.Join(", ", Enum.GetNames<MessageStatus>())}" });
+        if (!Enum.TryParse<JobStatus>(status, ignoreCase: true, out var parsed))
+            return Results.BadRequest(new { error = $"Invalid status. Valid: {string.Join(", ", Enum.GetNames<JobStatus>())}" });
         statusFilter = parsed;
     }
 
@@ -80,20 +80,20 @@ app.MapGet("/messages", async (
 
     return Results.Ok(new
     {
-        items = result.Items.Select(MessageResponse.From),
+        items = result.Items.Select(JobResponse.From),
         total = result.Total,
         offset,
         limit
     });
 })
-.WithTags("Messages")
-.WithName("GetMessages")
-.WithSummary("List messages with filtering and pagination")
-.WithDescription("Returns paginated list of inbox messages with optional status and date filters.");
+.WithTags("Jobs")
+.WithName("GetJobs")
+.WithSummary("List processing jobs with filtering and pagination")
+.WithDescription("Returns paginated list of processing jobs with optional status and date filters.");
 
-app.MapPost("/messages", async (
-    CreateMessageRequest request,
-    IInboxMessageRepository repo,
+app.MapPost("/jobs", async (
+    CreateJobRequest request,
+    IProcessingJobRepository repo,
     IUnitOfWork uow,
     IStorageService storage,
     CancellationToken ct) =>
@@ -107,11 +107,11 @@ app.MapPost("/messages", async (
 
     await storage.SaveAsync(rawKey, request.Payload, "application/json", ct);
 
-    var message = new InboxMessage
+    var message = new ProcessingJob
     {
         Id = messageId,
         ArtifactPrefix = prefix,
-        Status = MessageStatus.Pending,
+        Status = JobStatus.Pending,
         RetryCount = 0,
         CreatedAt = DateTime.UtcNow
     };
@@ -119,12 +119,12 @@ app.MapPost("/messages", async (
     await repo.AddAsync(message, ct);
     await uow.SaveChangesAsync(ct);
 
-    return Results.Created($"/messages/{message.Id}", MessageResponse.From(message));
+    return Results.Created($"/jobs/{message.Id}", JobResponse.From(message));
 })
-.WithTags("Messages")
-.WithName("CreateMessage")
-.WithSummary("Create a new message")
-.WithDescription("Accepts a new message payload and queues it for processing.");
+.WithTags("Jobs")
+.WithName("CreateJob")
+.WithSummary("Create a new processing job")
+.WithDescription("Accepts a payload and queues it for processing.");
 
 app.MapGet("/prompts", async (
     PromptService promptService,
@@ -207,53 +207,53 @@ app.MapPut("/prompts/{id:guid}", async (
 .WithSummary("Update a prompt")
 .WithDescription("Fully replaces a prompt template by ID.");
 
-app.MapPost("/messages/{id:guid}/restart", async (
+app.MapPost("/jobs/{id:guid}/restart", async (
     Guid id,
-    IInboxMessageRepository repo,
+    IProcessingJobRepository repo,
     CancellationToken ct) =>
 {
     var message = await repo.GetByIdAsync(id, ct);
     if (message is null)
-        return Results.NotFound(new { error = "Message not found" });
+        return Results.NotFound(new { error = "Job not found" });
 
     await repo.ResetToPendingAsync(id, ct);
 
     return Results.Ok(new { id, status = "restarted" });
 })
-.WithTags("Messages")
-.WithName("RestartMessage")
-.WithSummary("Restart message processing")
-.WithDescription("Resets a message to pending status so the worker re-processes it from scratch.");
+.WithTags("Jobs")
+.WithName("RestartJob")
+.WithSummary("Restart job processing")
+.WithDescription("Resets a job to pending status so the worker re-processes it from scratch.");
 
-app.MapGet("/messages/{id:guid}", async (
+app.MapGet("/jobs/{id:guid}", async (
     Guid id,
-    IInboxMessageRepository repo,
+    IProcessingJobRepository repo,
     CancellationToken ct) =>
 {
     var message = await repo.GetByIdAsync(id, ct);
     if (message is null)
-        return Results.NotFound(new { error = "Message not found" });
+        return Results.NotFound(new { error = "Job not found" });
 
-    return Results.Ok(MessageDetailResponse.From(message));
+    return Results.Ok(JobDetailResponse.From(message));
 })
-.WithTags("Messages")
-.WithName("GetMessageById")
-.WithSummary("Get message details with artifacts")
-.WithDescription("Returns a single message with its available artifact files.");
+.WithTags("Jobs")
+.WithName("GetJobById")
+.WithSummary("Get job details with artifacts")
+.WithDescription("Returns a single job with its available artifact files.");
 
-app.MapGet("/messages/{id:guid}/artifacts/{fileName}", async (
+app.MapGet("/jobs/{id:guid}/artifacts/{fileName}", async (
     Guid id,
     string fileName,
-    IInboxMessageRepository repo,
+    IProcessingJobRepository repo,
     IStorageService storage,
     CancellationToken ct) =>
 {
     var message = await repo.GetByIdAsync(id, ct);
     if (message is null)
-        return Results.NotFound(new { error = "Message not found" });
+        return Results.NotFound(new { error = "Job not found" });
 
     if (message.ArtifactPrefix is null)
-        return Results.NotFound(new { error = "No artifacts available. Message has not been processed yet." });
+        return Results.NotFound(new { error = "No artifacts available. Job has not been processed yet." });
 
     var key = fileName switch
     {
@@ -284,9 +284,9 @@ app.MapGet("/messages/{id:guid}/artifacts/{fileName}", async (
 
     return Results.Content(content, contentType);
 })
-.WithTags("Messages")
-.WithName("GetMessageArtifact")
-.WithSummary("Get message artifact content")
+.WithTags("Jobs")
+.WithName("GetJobArtifact")
+.WithSummary("Get job artifact content")
 .WithDescription("Returns the content of a specific processing artifact by file name.");
 
 app.Run();

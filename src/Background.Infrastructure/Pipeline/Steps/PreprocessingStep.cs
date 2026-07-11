@@ -20,7 +20,7 @@ public sealed partial class PreprocessingStep : IProcessingStep
     public string StepName => "Preprocessing";
 
     public async Task<IProcessingStepResult> ExecuteAsync(
-        InboxMessage message, PipelineContext context, CancellationToken ct)
+        ProcessingJob message, PipelineContext context, CancellationToken ct)
     {
         try
         {

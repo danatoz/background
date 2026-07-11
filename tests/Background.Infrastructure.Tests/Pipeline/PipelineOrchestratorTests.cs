@@ -9,7 +9,7 @@ namespace Background.Infrastructure.Tests.Pipeline;
 
 public sealed class PipelineOrchestratorTests
 {
-    private readonly IInboxMessageRepository _repository = Substitute.For<IInboxMessageRepository>();
+    private readonly IProcessingJobRepository _repository = Substitute.For<IProcessingJobRepository>();
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
     private readonly ILogger<PipelineOrchestrator> _logger = Substitute.For<ILogger<PipelineOrchestrator>>();
 
@@ -21,7 +21,7 @@ public sealed class PipelineOrchestratorTests
             var step = Substitute.For<IProcessingStep>();
             step.StepName.Returns(name);
             step.ExecuteAsync(
-                    Arg.Any<InboxMessage>(),
+                    Arg.Any<ProcessingJob>(),
                     Arg.Any<PipelineContext>(),
                     Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Done);
@@ -38,12 +38,12 @@ public sealed class PipelineOrchestratorTests
         var stepsRun = new List<string>();
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Done)
                 .AndDoes(_ => stepsRun.Add(step.StepName));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -57,12 +57,12 @@ public sealed class PipelineOrchestratorTests
         var stepsRun = new List<string>();
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Done)
                 .AndDoes(_ => stepsRun.Add(step.StepName));
         });
 
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = Guid.NewGuid(),
             LastStep = "Preprocessing"
@@ -81,7 +81,7 @@ public sealed class PipelineOrchestratorTests
         var stepsRun = new List<string>();
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(_ =>
                 {
                     stepsRun.Add(step.StepName);
@@ -91,7 +91,7 @@ public sealed class PipelineOrchestratorTests
                 });
         });
 
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = Guid.NewGuid(),
             RetryCount = 0
@@ -113,7 +113,7 @@ public sealed class PipelineOrchestratorTests
         var stepsRun = new List<string>();
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(_ =>
                 {
                     stepsRun.Add(step.StepName);
@@ -123,7 +123,7 @@ public sealed class PipelineOrchestratorTests
                 });
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -140,11 +140,11 @@ public sealed class PipelineOrchestratorTests
     {
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Fail("error"));
         });
 
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = Guid.NewGuid(),
             RetryCount = 2
@@ -164,11 +164,11 @@ public sealed class PipelineOrchestratorTests
     {
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.TerminalFail("fatal"));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -185,7 +185,7 @@ public sealed class PipelineOrchestratorTests
         var orch = CreateOrchestrator();
         var messageId = Guid.NewGuid();
         var prefix = "emails/2026/07/11/" + messageId.ToString("N");
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = messageId,
             LastStep = "Llm",
@@ -208,7 +208,7 @@ public sealed class PipelineOrchestratorTests
     public async Task RunAsync_SavesLastStepAfterEachStep()
     {
         var orch = CreateOrchestrator();
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -220,11 +220,11 @@ public sealed class PipelineOrchestratorTests
     {
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Any<PipelineContext>(), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Fail("fail"));
         });
 
-        var message = new InboxMessage { Id = Guid.NewGuid() };
+        var message = new ProcessingJob { Id = Guid.NewGuid() };
 
         await orch.RunAsync(message, CancellationToken.None);
 
@@ -235,7 +235,7 @@ public sealed class PipelineOrchestratorTests
     public async Task RunAsync_DoesNotReloadLlmResponse_WhenStartingFromBeginning()
     {
         var orch = CreateOrchestrator();
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = Guid.NewGuid(),
             ArtifactPrefix = "emails/2026/07/11/someprefix"
@@ -255,7 +255,7 @@ public sealed class PipelineOrchestratorTests
     public async Task RunAsync_DoesNotReloadLlmResponse_WhenPrefixIsEmpty()
     {
         var orch = CreateOrchestrator();
-        var message = new InboxMessage
+        var message = new ProcessingJob
         {
             Id = Guid.NewGuid(),
             LastStep = "Llm",
@@ -273,12 +273,12 @@ public sealed class PipelineOrchestratorTests
         PipelineContext? captured = null;
         var orch = CreateOrchestrator((step, _) =>
         {
-            step.ExecuteAsync(Arg.Any<InboxMessage>(), Arg.Do<PipelineContext>(ctx => captured = ctx), Arg.Any<CancellationToken>())
+            step.ExecuteAsync(Arg.Any<ProcessingJob>(), Arg.Do<PipelineContext>(ctx => captured = ctx), Arg.Any<CancellationToken>())
                 .Returns(ProcessingStepResult.Done);
         });
 
         var prefix = "emails/2026/07/11/abc";
-        var message = new InboxMessage { Id = Guid.NewGuid(), ArtifactPrefix = prefix };
+        var message = new ProcessingJob { Id = Guid.NewGuid(), ArtifactPrefix = prefix };
 
         _storage.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns("""{"subject":"Hello"}""");

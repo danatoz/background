@@ -3,34 +3,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Background.Dal.Repositories;
 
-internal sealed class InboxMessageRepository : IInboxMessageRepository
+internal sealed class ProcessingJobRepository : IProcessingJobRepository
 {
     private readonly AppDbContext _context;
 
-    public InboxMessageRepository(AppDbContext context)
+    public ProcessingJobRepository(AppDbContext context)
     {
         _context = context;
     }
 
-    public async Task AddAsync(InboxMessage message, CancellationToken ct = default)
+    public async Task AddAsync(ProcessingJob message, CancellationToken ct = default)
     {
-        await _context.Messages.AddAsync(message, ct);
+        await _context.Jobs.AddAsync(message, ct);
     }
 
-    public async Task<InboxMessage?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    public async Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await _context.Messages.FirstOrDefaultAsync(m => m.Id == id, ct);
+        return await _context.Jobs.FirstOrDefaultAsync(m => m.Id == id, ct);
     }
 
-    public async Task<MessageListResult> GetListAsync(
-        MessageStatus? status = null,
+    public async Task<JobListResult> GetListAsync(
+        JobStatus? status = null,
         DateTime? createdFrom = null,
         DateTime? createdTo = null,
         int offset = 0,
         int limit = 20,
         CancellationToken ct = default)
     {
-        var query = _context.Messages.AsQueryable();
+        var query = _context.Jobs.AsQueryable();
 
         if (status.HasValue)
             query = query.Where(m => m.Status == status.Value);
@@ -49,28 +49,28 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
             .Take(limit)
             .ToListAsync(ct);
 
-        return new MessageListResult(items, total);
+        return new JobListResult(items, total);
     }
 
-    public async Task<List<InboxMessage>> ClaimMessagesAsync(
+    public async Task<List<ProcessingJob>> ClaimMessagesAsync(
         int batchSize, string workerId, TimeSpan lockDuration, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
         var lockedUntil = now.Add(lockDuration);
 
-        var statusProcessing = MessageStatus.Processing.ToString().ToLowerInvariant();
-        var statusPending = MessageStatus.Pending.ToString().ToLowerInvariant();
-        var statusFailed = MessageStatus.Failed.ToString().ToLowerInvariant();
+        var statusProcessing = JobStatus.Processing.ToString().ToLowerInvariant();
+        var statusPending = JobStatus.Pending.ToString().ToLowerInvariant();
+        var statusFailed = JobStatus.Failed.ToString().ToLowerInvariant();
 
-        var messages = await _context.Messages
+        var messages = await _context.Jobs
             .FromSqlInterpolated($"""
-                UPDATE "Messages"
+                UPDATE "ProcessingJobs"
                 SET "Status" = {statusProcessing}::message_status,
                     "WorkerId" = {workerId},
                     "LockedUntil" = {lockedUntil},
                     "StartedAt" = {now}
                 WHERE "Id" IN (
-                    SELECT "Id" FROM "Messages"
+                    SELECT "Id" FROM "ProcessingJobs"
                     WHERE ("Status" = {statusPending}::message_status
                         OR ("Status" = {statusFailed}::message_status AND "NextRetryAt" <= {now})
                         OR ("Status" = {statusProcessing}::message_status AND "LockedUntil" <= {now}))
@@ -88,11 +88,11 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
 
     public async Task MarkCompletedAsync(Guid id, CancellationToken ct = default)
     {
-        await _context.Messages
+        await _context.Jobs
             .Where(m => m.Id == id)
             .ExecuteUpdateAsync(
                 setters => setters
-                    .SetProperty(m => m.Status, MessageStatus.Completed)
+                    .SetProperty(m => m.Status, JobStatus.Completed)
                     .SetProperty(m => m.CompletedAt, DateTime.UtcNow)
                     .SetProperty(m => m.LockedUntil, (DateTime?)null)
                     .SetProperty(m => m.WorkerId, (string?)null),
@@ -103,11 +103,11 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
         Guid id, string error, TimeSpan? retryDelay = null, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
-        await _context.Messages
+        await _context.Jobs
             .Where(m => m.Id == id)
             .ExecuteUpdateAsync(
                 setters => setters
-                    .SetProperty(m => m.Status, MessageStatus.Failed)
+                    .SetProperty(m => m.Status, JobStatus.Failed)
                     .SetProperty(m => m.LastError, error)
                     .SetProperty(m => m.RetryCount, m => m.RetryCount + 1)
                     .SetProperty(m => m.CompletedAt, now)
@@ -120,11 +120,11 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
     public async Task ResetToPendingAsync(Guid id, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
-        await _context.Messages
+        await _context.Jobs
             .Where(m => m.Id == id)
             .ExecuteUpdateAsync(
                 setters => setters
-                    .SetProperty(m => m.Status, MessageStatus.Pending)
+                    .SetProperty(m => m.Status, JobStatus.Pending)
                     .SetProperty(m => m.RetryCount, 0)
                     .SetProperty(m => m.LastStep, (string?)null)
                     .SetProperty(m => m.LastError, (string?)null)
@@ -137,9 +137,9 @@ internal sealed class InboxMessageRepository : IInboxMessageRepository
                 ct);
     }
 
-    public void Attach(InboxMessage message)
+    public void Attach(ProcessingJob message)
     {
-        _context.Messages.Attach(message);
+        _context.Jobs.Attach(message);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default)

@@ -5,17 +5,17 @@ using Background.Infrastructure.Storage;
 
 namespace Background.Api.Workers;
 
-public class InboxProcessingWorker : BackgroundService
+public class JobProcessingWorker : BackgroundService
 {
     private static readonly SemaphoreSlim _semaphore = new(5, 5);
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<InboxProcessingWorker> _logger;
+    private readonly ILogger<JobProcessingWorker> _logger;
     private readonly string _workerId;
 
-    public InboxProcessingWorker(
+    public JobProcessingWorker(
         IServiceScopeFactory scopeFactory,
-        ILogger<InboxProcessingWorker> logger)
+        ILogger<JobProcessingWorker> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -24,14 +24,14 @@ public class InboxProcessingWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("InboxProcessingWorker {WorkerId} started", _workerId);
+        _logger.LogInformation("JobProcessingWorker {WorkerId} started", _workerId);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var repo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
+                var repo = scope.ServiceProvider.GetRequiredService<IProcessingJobRepository>();
 
                 var messages = await repo.ClaimMessagesAsync(
                     batchSize: 5,
@@ -62,18 +62,18 @@ public class InboxProcessingWorker : BackgroundService
             }
         }
 
-        _logger.LogInformation("InboxProcessingWorker {WorkerId} stopped", _workerId);
+        _logger.LogInformation("JobProcessingWorker {WorkerId} stopped", _workerId);
     }
 
     private async Task ProcessMessageAsync(
-        InboxMessage message,
+        ProcessingJob message,
         CancellationToken ct)
     {
         await _semaphore.WaitAsync(ct);
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var repo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
+            var repo = scope.ServiceProvider.GetRequiredService<IProcessingJobRepository>();
             repo.Attach(message);
 
             try

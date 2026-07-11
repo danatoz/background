@@ -27,7 +27,7 @@ namespace Background.Dal.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "message_status", new[] { "completed", "failed", "pending", "processing" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Background.Dal.Entities.InboxMessage", b =>
+            modelBuilder.Entity("Background.Dal.Entities.ProcessingJob", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -76,7 +76,7 @@ namespace Background.Dal.Migrations
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<MessageStatus>("Status")
+                    b.Property<JobStatus>("Status")
                         .HasColumnType("message_status");
 
                     b.Property<string>("WorkerId")
@@ -148,7 +148,7 @@ namespace Background.Dal.Migrations
                     b.ToTable("Prompts", (string)null);
                 });
 
-            modelBuilder.Entity("Background.Dal.Entities.InboxMessage", b =>
+            modelBuilder.Entity("Background.Dal.Entities.ProcessingJob", b =>
                 {
                     b.HasOne("Background.Dal.Entities.Prompt", "Prompt")
                         .WithMany()

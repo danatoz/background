@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Background.Dal.EntityConfigurations;
 
-public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
+public class ProcessingJobConfiguration : IEntityTypeConfiguration<ProcessingJob>
 {
-    public void Configure(EntityTypeBuilder<InboxMessage> builder)
+    public void Configure(EntityTypeBuilder<ProcessingJob> builder)
     {
-        builder.ToTable("Messages");
+        builder.ToTable("ProcessingJobs");
 
         builder.HasKey(x => x.Id);
 

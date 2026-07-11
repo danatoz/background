@@ -12,7 +12,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public Task<bool> CanConnectAsync(CancellationToken ct = default)
         => Database.CanConnectAsync(ct);
 
-    public DbSet<InboxMessage> Messages => Set<InboxMessage>();
+    public DbSet<ProcessingJob> Jobs => Set<ProcessingJob>();
     public DbSet<Prompt> Prompts => Set<Prompt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

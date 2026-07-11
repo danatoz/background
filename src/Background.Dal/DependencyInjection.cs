@@ -12,10 +12,10 @@ public static class DalRegistration
         services.AddDbContext<AppDbContext>(opt =>
             opt.UseNpgsql(
                 connectionString,
-                o => o.MapEnum<Entities.MessageStatus>()));
+                o => o.MapEnum<Entities.JobStatus>("message_status")));
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
-        services.AddScoped<IInboxMessageRepository, InboxMessageRepository>();
+        services.AddScoped<IProcessingJobRepository, ProcessingJobRepository>();
 
         return services;
     }

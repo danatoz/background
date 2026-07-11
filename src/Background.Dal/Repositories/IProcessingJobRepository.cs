@@ -2,23 +2,23 @@ using Background.Dal.Entities;
 
 namespace Background.Dal.Repositories;
 
-public record MessageListResult(List<InboxMessage> Items, int Total);
+public record JobListResult(List<ProcessingJob> Items, int Total);
 
-public interface IInboxMessageRepository
+public interface IProcessingJobRepository
 {
-    Task AddAsync(InboxMessage message, CancellationToken ct = default);
+    Task AddAsync(ProcessingJob message, CancellationToken ct = default);
 
-    Task<InboxMessage?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
-    Task<MessageListResult> GetListAsync(
-        MessageStatus? status = null,
+    Task<JobListResult> GetListAsync(
+        JobStatus? status = null,
         DateTime? createdFrom = null,
         DateTime? createdTo = null,
         int offset = 0,
         int limit = 20,
         CancellationToken ct = default);
 
-    Task<List<InboxMessage>> ClaimMessagesAsync(
+    Task<List<ProcessingJob>> ClaimMessagesAsync(
         int batchSize, string workerId, TimeSpan lockDuration, CancellationToken ct = default);
 
     Task MarkCompletedAsync(Guid id, CancellationToken ct = default);
@@ -28,7 +28,7 @@ public interface IInboxMessageRepository
 
     Task ResetToPendingAsync(Guid id, CancellationToken ct = default);
 
-    void Attach(InboxMessage message);
+    void Attach(ProcessingJob message);
 
     Task SaveChangesAsync(CancellationToken ct = default);
 }

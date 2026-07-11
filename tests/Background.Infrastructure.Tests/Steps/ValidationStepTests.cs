@@ -31,7 +31,7 @@ public sealed class ValidationStepTests
     {
         var context = new PipelineContext { LlmResponse = ValidJson };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(ValidJson, context.ProcessedJson);
@@ -42,7 +42,7 @@ public sealed class ValidationStepTests
     {
         var context = new PipelineContext { LlmResponse = null };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("empty", result.Error);
@@ -53,7 +53,7 @@ public sealed class ValidationStepTests
     {
         var context = new PipelineContext { LlmResponse = "" };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("empty", result.Error);
@@ -64,7 +64,7 @@ public sealed class ValidationStepTests
     {
         var context = new PipelineContext { LlmResponse = "not json" };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("Invalid JSON", result.Error);
@@ -76,7 +76,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_inn":"7701234567","document_type":"x","delivery_amount":{"value":1,"currency":"RUB"},"confidence":0.5}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("client_name", result.Error);
@@ -88,7 +88,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_name":"x","document_type":"x","delivery_amount":{"value":1,"currency":"RUB"},"confidence":0.5}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("client_inn", result.Error);
@@ -100,7 +100,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_name":"x","client_inn":"x","delivery_amount":{"value":1,"currency":"RUB"},"confidence":0.5}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("document_type", result.Error);
@@ -112,7 +112,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_name":"x","client_inn":"x","document_type":"x","delivery_amount":null,"confidence":0.5}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("delivery_amount", result.Error);
@@ -124,7 +124,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_name":"x","client_inn":"x","document_type":"x","delivery_amount":{"value":"abc","currency":"RUB"},"confidence":0.5}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("delivery_amount.value", result.Error);
@@ -136,7 +136,7 @@ public sealed class ValidationStepTests
         var json = /*lang=json,strict*/ """{"client_name":"x","client_inn":"x","document_type":"x","delivery_amount":{"value":1,"currency":"RUB"},"confidence":"high"}""";
         var context = new PipelineContext { LlmResponse = json };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("confidence", result.Error);

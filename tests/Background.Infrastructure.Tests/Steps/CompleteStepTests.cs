@@ -27,7 +27,7 @@ public sealed class CompleteStepTests
             ProcessedJson = """{"client_name":"Test"}"""
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         await _storage.Received(1).SaveAsync(
@@ -46,7 +46,7 @@ public sealed class CompleteStepTests
             ProcessedJson = null
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         await _storage.DidNotReceive().SaveAsync(
@@ -62,7 +62,7 @@ public sealed class CompleteStepTests
             ProcessedJson = ""
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         await _storage.Received(1).SaveAsync(
@@ -85,7 +85,7 @@ public sealed class CompleteStepTests
             ProcessedJson = "{}"
         };
 
-        var result = await _step.ExecuteAsync(new InboxMessage(), context, CancellationToken.None);
+        var result = await _step.ExecuteAsync(new ProcessingJob(), context, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("upload failed", result.Error);
