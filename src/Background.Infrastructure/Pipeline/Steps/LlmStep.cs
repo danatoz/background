@@ -10,14 +10,14 @@ namespace Background.Infrastructure.Pipeline.Steps;
 public sealed class LlmStep : IProcessingStep
 {
     private readonly IStorageService _storage;
-    private readonly ActivePromptCache _promptCache;
+    private readonly IActivePromptCache _promptCache;
     private readonly ILlmService _llmService;
     private readonly LlmOptions _options;
     private readonly ILogger<LlmStep> _logger;
 
     public LlmStep(
         IStorageService storage,
-        ActivePromptCache promptCache,
+        IActivePromptCache promptCache,
         ILlmService llmService,
         IOptions<LlmOptions> options,
         ILogger<LlmStep> logger)

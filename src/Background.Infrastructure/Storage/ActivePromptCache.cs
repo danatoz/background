@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Background.Infrastructure.Storage;
 
-public sealed class ActivePromptCache
+public sealed class ActivePromptCache : IActivePromptCache
 {
     private readonly ConcurrentDictionary<string, Prompt?> _cache = new();
     private readonly IServiceScopeFactory _scopeFactory;
