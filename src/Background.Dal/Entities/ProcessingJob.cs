@@ -31,4 +31,6 @@ public class ProcessingJob
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? LastError { get; set; }
+
+    public EmailMetadata? EmailMetadata { get; set; }
 }

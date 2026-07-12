@@ -14,6 +14,7 @@ public class AppDbContext : DbContext, IUnitOfWork
 
     public DbSet<ProcessingJob> Jobs => Set<ProcessingJob>();
     public DbSet<Prompt> Prompts => Set<Prompt>();
+    public DbSet<EmailMetadata> EmailMetadata => Set<EmailMetadata>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

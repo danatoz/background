@@ -14,6 +14,9 @@ public record JobDetailResponse(
     DateTime? StartedAt,
     DateTime? CompletedAt,
     double? ProcessingDurationSeconds,
+    string? SenderName,
+    string? SenderAddress,
+    string? Folder,
     List<ArtifactInfo> Artifacts)
 {
     private static readonly Dictionary<string, string[]> ArtifactsByStep = new()
@@ -57,6 +60,9 @@ public record JobDetailResponse(
             m.StartedAt.HasValue && m.CompletedAt.HasValue
                 ? m.CompletedAt.Value.Subtract(m.StartedAt.Value).TotalSeconds
                 : null,
+            m.EmailMetadata?.SenderName,
+            m.EmailMetadata?.SenderAddress,
+            m.EmailMetadata?.Folder,
             artifacts);
     }
 }

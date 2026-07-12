@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Background.AI;
 using Background.Api.Models;
 using Background.Api.Workers;
@@ -57,6 +58,9 @@ app.MapGet("/jobs", async (
     IProcessingJobRepository repo,
     CancellationToken ct,
     string? status = null,
+    string? senderName = null,
+    string? senderAddress = null,
+    string? folder = null,
     DateTime? createdFrom = null,
     DateTime? createdTo = null,
     int offset = 0,
@@ -76,7 +80,7 @@ app.MapGet("/jobs", async (
         offset = 0;
 
     var result = await repo.GetListAsync(
-        statusFilter, createdFrom, createdTo, offset, limit, ct);
+        statusFilter, senderName, senderAddress, folder, createdFrom, createdTo, offset, limit, ct);
 
     return Results.Ok(new
     {
@@ -101,6 +105,19 @@ app.MapPost("/jobs", async (
     if (!request.IsValid())
         return Results.BadRequest(new { error = "Payload is required" });
 
+    EmailPayload? parsed;
+    try
+    {
+        parsed = JsonSerializer.Deserialize<EmailPayload>(request.Payload);
+    }
+    catch (JsonException)
+    {
+        return Results.BadRequest(new { error = "Payload must be a valid JSON" });
+    }
+
+    if (parsed is null)
+        return Results.BadRequest(new { error = "Payload must be a valid JSON" });
+
     var messageId = Guid.NewGuid();
     var prefix = ArtifactPathBuilder.BuildPrefix("emails", messageId);
     var rawKey = ArtifactPathBuilder.Raw(prefix);
@@ -113,7 +130,19 @@ app.MapPost("/jobs", async (
         ArtifactPrefix = prefix,
         Status = JobStatus.Pending,
         RetryCount = 0,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.UtcNow,
+        EmailMetadata = new EmailMetadata
+        {
+            Id = messageId,
+            SenderName = parsed.SenderName,
+            SenderAddress = parsed.SenderAddress,
+            Folder = parsed.Folder,
+            BodyIsHtml = parsed.Body?.IsHtml,
+            BodyS3Key = parsed.Body?.S3Key,
+            AttachmentsJson = parsed.Attachments is { Count: > 0 }
+                ? JsonSerializer.Serialize(parsed.Attachments)
+                : null
+        }
     };
 
     await repo.AddAsync(message, ct);

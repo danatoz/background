@@ -55,6 +55,11 @@ public class ProcessingJobConfiguration : IEntityTypeConfiguration<ProcessingJob
             .HasForeignKey(x => x.PromptId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(x => x.EmailMetadata)
+            .WithOne(x => x.Job)
+            .HasForeignKey<EmailMetadata>(x => x.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.NextRetryAt);
         builder.HasIndex(x => x.LockedUntil);

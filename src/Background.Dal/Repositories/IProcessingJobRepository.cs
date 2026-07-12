@@ -12,6 +12,9 @@ public interface IProcessingJobRepository
 
     Task<JobListResult> GetListAsync(
         JobStatus? status = null,
+        string? senderName = null,
+        string? senderAddress = null,
+        string? folder = null,
         DateTime? createdFrom = null,
         DateTime? createdTo = null,
         int offset = 0,

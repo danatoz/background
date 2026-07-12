@@ -13,7 +13,10 @@ public record JobResponse(
     DateTime CreatedAt,
     DateTime? StartedAt,
     DateTime? CompletedAt,
-    double? ProcessingDurationSeconds)
+    double? ProcessingDurationSeconds,
+    string? SenderName,
+    string? SenderAddress,
+    string? Folder)
 {
     public static JobResponse From(ProcessingJob m) => new(
         m.Id, m.Status.ToString(), m.RetryCount,
@@ -21,5 +24,8 @@ public record JobResponse(
         m.CreatedAt, m.StartedAt, m.CompletedAt,
         m.StartedAt.HasValue && m.CompletedAt.HasValue
             ? m.CompletedAt.Value.Subtract(m.StartedAt.Value).TotalSeconds
-            : null);
+            : null,
+        m.EmailMetadata?.SenderName,
+        m.EmailMetadata?.SenderAddress,
+        m.EmailMetadata?.Folder);
 }

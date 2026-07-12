@@ -19,21 +19,37 @@ internal sealed class ProcessingJobRepository : IProcessingJobRepository
 
     public async Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await _context.Jobs.FirstOrDefaultAsync(m => m.Id == id, ct);
+        return await _context.Jobs
+            .Include(m => m.EmailMetadata)
+            .FirstOrDefaultAsync(m => m.Id == id, ct);
     }
 
     public async Task<JobListResult> GetListAsync(
         JobStatus? status = null,
+        string? senderName = null,
+        string? senderAddress = null,
+        string? folder = null,
         DateTime? createdFrom = null,
         DateTime? createdTo = null,
         int offset = 0,
         int limit = 20,
         CancellationToken ct = default)
     {
-        var query = _context.Jobs.AsQueryable();
+        var query = _context.Jobs
+            .Include(m => m.EmailMetadata)
+            .AsQueryable();
 
         if (status.HasValue)
             query = query.Where(m => m.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(senderName))
+            query = query.Where(m => m.EmailMetadata != null && m.EmailMetadata.SenderName != null && m.EmailMetadata.SenderName.Contains(senderName));
+
+        if (!string.IsNullOrWhiteSpace(senderAddress))
+            query = query.Where(m => m.EmailMetadata != null && m.EmailMetadata.SenderAddress != null && m.EmailMetadata.SenderAddress.Contains(senderAddress));
+
+        if (!string.IsNullOrWhiteSpace(folder))
+            query = query.Where(m => m.EmailMetadata != null && m.EmailMetadata.Folder != null && m.EmailMetadata.Folder.Contains(folder));
 
         if (createdFrom.HasValue)
             query = query.Where(m => m.CreatedAt >= createdFrom.Value);
