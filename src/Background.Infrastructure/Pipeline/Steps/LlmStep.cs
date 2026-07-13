@@ -68,6 +68,7 @@ public sealed class LlmStep : IProcessingStep
                 MaxTokens = prompt.MaxTokens,
                 TopP = prompt.TopP,
                 Seed = prompt.Seed,
+                ResponseSchema = prompt.ResponseSchema,
                 ResponseFormat = responseFormat,
                 Provider = prompt.Provider,
             }, ct);

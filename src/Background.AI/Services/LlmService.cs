@@ -41,7 +41,10 @@ internal sealed class LlmService : ILlmService
             TopP = request.TopP is not null ? (float)request.TopP : null,
             Seed = request.Seed,
             ResponseFormat = request.ResponseFormat == LlmResponseFormat.JsonObject
-                ? typeof(ClassificationResult)
+                ? request.ResponseSchema is not null
+                    ? ChatResponseFormat.CreateJsonSchemaFormat(
+                        "response", BinaryData.FromString(request.ResponseSchema))
+                    : typeof(ClassificationResult)
                 : null
         };
 

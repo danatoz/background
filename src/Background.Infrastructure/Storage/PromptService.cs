@@ -55,6 +55,7 @@ public class PromptService
         existing.Seed = updated.Seed;
         existing.Description = updated.Description;
         existing.Tags = updated.Tags;
+        existing.ResponseSchema = updated.ResponseSchema;
         existing.Provider = updated.Provider;
 
         if (updated.IsActive && !existing.IsActive)

@@ -47,6 +47,8 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(x => x.Tags)
             .HasMaxLength(500);
 
+        builder.Property(x => x.ResponseSchema);
+
         builder.Property(x => x.Provider)
             .HasMaxLength(50)
             .IsRequired()

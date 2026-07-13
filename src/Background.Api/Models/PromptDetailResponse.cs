@@ -16,6 +16,7 @@ public record PromptDetailResponse(
     int? Seed,
     string? Description,
     string? Tags,
+    string? ResponseSchema,
     string Provider,
     bool IsActive,
     DateTime CreatedAt,
@@ -24,6 +25,6 @@ public record PromptDetailResponse(
     public static PromptDetailResponse From(Prompt p) => new(
         p.Id, p.Name, p.Version, p.Content, p.SystemPrompt,
         p.ModelName, p.Temperature, p.MaxTokens, p.ResponseFormat, p.TopP, p.Seed,
-        p.Description, p.Tags,
+        p.Description, p.Tags, p.ResponseSchema,
         p.Provider, p.IsActive, p.CreatedAt, p.UpdatedAt);
 }

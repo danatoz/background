@@ -13,5 +13,6 @@ public record CreatePromptRequest(
     int? Seed,
     string? Description,
     string? Tags,
+    string? ResponseSchema,
     string? Provider,
     bool IsActive);

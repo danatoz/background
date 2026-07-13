@@ -240,6 +240,7 @@ app.MapPost("/prompts", async (
             Seed = request.Seed,
             Description = request.Description,
             Tags = request.Tags,
+            ResponseSchema = request.ResponseSchema,
             Provider = request.Provider ?? "ChatCompletion",
             IsActive = request.IsActive,
         };
@@ -276,6 +277,7 @@ app.MapPut("/prompts/{id:guid}", async (
             Seed = request.Seed,
             Description = request.Description,
             Tags = request.Tags,
+            ResponseSchema = request.ResponseSchema,
             Provider = request.Provider ?? "ChatCompletion",
             IsActive = request.IsActive,
         };

@@ -9,6 +9,7 @@ public record LlmRequest
     public int? MaxTokens { get; init; }
     public double? TopP { get; init; }
     public int? Seed { get; init; }
+    public string? ResponseSchema { get; init; }
     public LlmResponseFormat ResponseFormat { get; init; } = LlmResponseFormat.Text;
     public string Provider { get; init; } = "ChatCompletion";
 }
