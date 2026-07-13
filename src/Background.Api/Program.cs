@@ -1,8 +1,12 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Background.AI;
 using Background.Api.Models;
 using Background.Api.Workers;
 using Background.Dal;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Background.Dal.Entities;
 using Background.Dal.Repositories;
 using Background.Infrastructure;
@@ -53,6 +57,40 @@ app.MapGet("/health", async (IUnitOfWork uow, CancellationToken ct) =>
 .WithName("HealthCheck")
 .WithSummary("Health check endpoint")
 .WithDescription("Returns service health status. Checks database connectivity.");
+
+app.MapGet("/health/llm", async (HttpContext http, CancellationToken ct) =>
+{
+    var kernel = http.RequestServices.GetRequiredService<Kernel>();
+    var chat = kernel.GetRequiredService<IChatCompletionService>();
+    var sw = Stopwatch.StartNew();
+    try
+    {
+        var chatHistory = new ChatHistory();
+        chatHistory.AddUserMessage("ping");
+        var result = await chat.GetChatMessageContentAsync(
+            chatHistory, new OpenAIPromptExecutionSettings { MaxTokens = 1 }, null, ct);
+        sw.Stop();
+        return Results.Ok(new
+        {
+            status = "healthy",
+            model = result.ModelId,
+            latencyMs = (int)sw.Elapsed.TotalMilliseconds,
+            timestamp = DateTime.UtcNow
+        });
+    }
+    catch (Exception ex)
+    {
+        sw.Stop();
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 503,
+            title: "LLM unavailable");
+    }
+})
+.WithTags("Health")
+.WithName("LlmHealthCheck")
+.WithSummary("LLM health check endpoint")
+.WithDescription("Sends a minimal ping to the LLM and returns model, latency and status.");
 
 app.MapGet("/jobs", async (
     IProcessingJobRepository repo,
@@ -188,19 +226,26 @@ app.MapPost("/prompts", async (
     PromptService promptService,
     CancellationToken ct) =>
 {
-    var prompt = new Prompt
-    {
-        Name = request.Name,
-        Version = request.Version,
-        Content = request.Content,
-        SystemPrompt = request.SystemPrompt,
-        ModelName = request.ModelName,
-        Temperature = request.Temperature,
-        IsActive = request.IsActive,
-    };
+        var prompt = new Prompt
+        {
+            Name = request.Name,
+            Version = request.Version,
+            Content = request.Content,
+            SystemPrompt = request.SystemPrompt,
+            ModelName = request.ModelName,
+            Temperature = request.Temperature,
+            MaxTokens = request.MaxTokens,
+            ResponseFormat = request.ResponseFormat,
+            TopP = request.TopP,
+            Seed = request.Seed,
+            Description = request.Description,
+            Tags = request.Tags,
+            Provider = request.Provider ?? "ChatCompletion",
+            IsActive = request.IsActive,
+        };
 
-    var created = await promptService.CreateAsync(prompt, ct);
-    return Results.Created($"/prompts/{created.Id}", PromptDetailResponse.From(created));
+        var created = await promptService.CreateAsync(prompt, ct);
+        return Results.Created($"/prompts/{created.Id}", PromptDetailResponse.From(created));
 })
 .WithTags("Prompts")
 .WithName("CreatePrompt")
@@ -217,16 +262,23 @@ app.MapPut("/prompts/{id:guid}", async (
     if (existing is null)
         return Results.NotFound(new { error = "Prompt not found" });
 
-    var updated = new Prompt
-    {
-        Name = request.Name,
-        Version = request.Version,
-        Content = request.Content,
-        SystemPrompt = request.SystemPrompt,
-        ModelName = request.ModelName,
-        Temperature = request.Temperature,
-        IsActive = request.IsActive,
-    };
+        var updated = new Prompt
+        {
+            Name = request.Name,
+            Version = request.Version,
+            Content = request.Content,
+            SystemPrompt = request.SystemPrompt,
+            ModelName = request.ModelName,
+            Temperature = request.Temperature,
+            MaxTokens = request.MaxTokens,
+            ResponseFormat = request.ResponseFormat,
+            TopP = request.TopP,
+            Seed = request.Seed,
+            Description = request.Description,
+            Tags = request.Tags,
+            Provider = request.Provider ?? "ChatCompletion",
+            IsActive = request.IsActive,
+        };
 
     var result = await promptService.UpdateAsync(existing, updated, ct);
     return Results.Ok(PromptDetailResponse.From(result));

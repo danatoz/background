@@ -1,3 +1,4 @@
+using System.Net.Http;
 using Background.AI.Abstractions;
 using Background.AI.Configuration;
 using Background.AI.Services;
@@ -17,6 +18,10 @@ public static class AiRegistration
         services.AddSingleton(sp =>
         {
             var opts = configuration.GetSection(LlmOptions.Section).Get<LlmOptions>() ?? new LlmOptions();
+            var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds)
+            };
             var builder = Kernel.CreateBuilder();
 
             if (!string.IsNullOrWhiteSpace(opts.Endpoint))
@@ -24,19 +29,23 @@ public static class AiRegistration
                 builder.AddOpenAIChatCompletion(
                     modelId: opts.ModelId,
                     endpoint: new Uri(opts.Endpoint),
-                    apiKey: opts.ApiKey);
+                    apiKey: opts.ApiKey,
+                    httpClient: httpClient);
             }
             else
             {
                 builder.AddOpenAIChatCompletion(
                     modelId: opts.ModelId,
-                    apiKey: opts.ApiKey);
+                    apiKey: opts.ApiKey,
+                    httpClient: httpClient);
             }
 
             return builder.Build();
         });
 
-        services.AddSingleton<ILlmService, LlmService>();
+        services.AddSingleton<LlmService>();
+        services.AddSingleton<InvokePromptLlmService>();
+        services.AddSingleton<ILlmService, StrategyLlmService>();
 
         return services;
     }

@@ -9,6 +9,13 @@ public class Prompt
     public string? SystemPrompt { get; set; }
     public string? ModelName { get; set; }
     public double? Temperature { get; set; }
+    public int? MaxTokens { get; set; }
+    public string? ResponseFormat { get; set; }
+    public double? TopP { get; set; }
+    public int? Seed { get; set; }
+    public string? Description { get; set; }
+    public string? Tags { get; set; }
+    public string Provider { get; set; } = "ChatCompletion";
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

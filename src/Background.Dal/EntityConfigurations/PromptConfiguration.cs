@@ -31,6 +31,27 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(x => x.Temperature)
             .HasPrecision(3, 2);
 
+        builder.Property(x => x.MaxTokens);
+
+        builder.Property(x => x.ResponseFormat)
+            .HasMaxLength(20);
+
+        builder.Property(x => x.TopP)
+            .HasPrecision(3, 2);
+
+        builder.Property(x => x.Seed);
+
+        builder.Property(x => x.Description)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Tags)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Provider)
+            .HasMaxLength(50)
+            .IsRequired()
+            .HasDefaultValue("ChatCompletion");
+
         builder.Property(x => x.IsActive)
             .HasDefaultValue(false);
 

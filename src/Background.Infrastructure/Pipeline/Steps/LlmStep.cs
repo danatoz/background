@@ -50,9 +50,14 @@ public sealed class LlmStep : IProcessingStep
             var promptKey = ArtifactPathBuilder.Prompt(context.ArtifactPrefix);
             await _storage.SaveAsync(promptKey, rendered, "text/markdown", ct);
 
-            var responseFormat = _options.UseStructuredOutput
-                ? LlmResponseFormat.JsonObject
-                : LlmResponseFormat.Text;
+            var responseFormat = prompt.ResponseFormat switch
+            {
+                "JsonObject" => LlmResponseFormat.JsonObject,
+                "Text" => LlmResponseFormat.Text,
+                _ => _options.UseStructuredOutput
+                    ? LlmResponseFormat.JsonObject
+                    : LlmResponseFormat.Text
+            };
 
             var llmResult = await _llmService.ExecuteAsync(new LlmRequest
             {
@@ -60,7 +65,11 @@ public sealed class LlmStep : IProcessingStep
                 UserPrompt = rendered,
                 ModelName = prompt.ModelName,
                 Temperature = prompt.Temperature,
+                MaxTokens = prompt.MaxTokens,
+                TopP = prompt.TopP,
+                Seed = prompt.Seed,
                 ResponseFormat = responseFormat,
+                Provider = prompt.Provider,
             }, ct);
 
             context.LlmResponse = llmResult.Content;

@@ -4,6 +4,7 @@ using Background.Dal;
 using Background.Dal.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Background.Dal.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260713165335_AddProviderToPrompts")]
+    partial class AddProviderToPrompts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,17 +139,10 @@ namespace Background.Dal.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
-
-                    b.Property<int?>("MaxTokens")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ModelName")
                         .HasMaxLength(100)
@@ -164,25 +160,10 @@ namespace Background.Dal.Migrations
                         .HasColumnType("character varying(50)")
                         .HasDefaultValue("ChatCompletion");
 
-                    b.Property<string>("ResponseFormat")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int?>("Seed")
-                        .HasColumnType("integer");
-
                     b.Property<string>("SystemPrompt")
                         .HasColumnType("text");
 
-                    b.Property<string>("Tags")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<double?>("Temperature")
-                        .HasPrecision(3, 2)
-                        .HasColumnType("double precision");
-
-                    b.Property<double?>("TopP")
                         .HasPrecision(3, 2)
                         .HasColumnType("double precision");
 

@@ -20,10 +20,19 @@ public sealed class ValidationStep : IProcessingStep
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(context.LlmResponse))
+            var raw = context.LlmResponse;
+            if (string.IsNullOrWhiteSpace(raw))
                 return Task.FromResult<IProcessingStepResult>(ProcessingStepResult.TerminalFail("LLM response is empty"));
 
-            using var doc = JsonDocument.Parse(context.LlmResponse);
+            var firstBrace = raw.IndexOf('{');
+            var lastBrace = raw.LastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace)
+            {
+                raw = raw[firstBrace..(lastBrace + 1)];
+                context.LlmResponse = raw;
+            }
+
+            using var doc = JsonDocument.Parse(raw);
             var root = doc.RootElement;
 
             if (!root.TryGetProperty("client_name", out var clientName) || clientName.GetString() is null)

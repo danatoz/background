@@ -7,4 +7,11 @@ public record UpdatePromptRequest(
     string? SystemPrompt,
     string? ModelName,
     double? Temperature,
+    int? MaxTokens,
+    string? ResponseFormat,
+    double? TopP,
+    int? Seed,
+    string? Description,
+    string? Tags,
+    string? Provider,
     bool IsActive);

@@ -49,6 +49,13 @@ public class PromptService
         existing.SystemPrompt = updated.SystemPrompt;
         existing.ModelName = updated.ModelName;
         existing.Temperature = updated.Temperature;
+        existing.MaxTokens = updated.MaxTokens;
+        existing.ResponseFormat = updated.ResponseFormat;
+        existing.TopP = updated.TopP;
+        existing.Seed = updated.Seed;
+        existing.Description = updated.Description;
+        existing.Tags = updated.Tags;
+        existing.Provider = updated.Provider;
 
         if (updated.IsActive && !existing.IsActive)
             await DeactivateOthersAsync(existing.Name, existing.Id, ct);
