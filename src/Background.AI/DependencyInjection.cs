@@ -4,6 +4,7 @@ using Background.AI.Configuration;
 using Background.AI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
 namespace Background.AI;
@@ -18,7 +19,14 @@ public static class AiRegistration
         services.AddSingleton(sp =>
         {
             var opts = configuration.GetSection(LlmOptions.Section).Get<LlmOptions>() ?? new LlmOptions();
-            var httpClient = new HttpClient
+
+            var innerHandler = new HttpClientHandler();
+            var loggingHandler = new LoggingDelegatingHandler(
+                sp.GetRequiredService<ILogger<LoggingDelegatingHandler>>())
+            {
+                InnerHandler = innerHandler
+            };
+            var httpClient = new HttpClient(loggingHandler)
             {
                 Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds)
             };
