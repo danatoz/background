@@ -50,6 +50,7 @@ public sealed class LlmStep : IProcessingStep
             }
 
             message.PromptId = prompt.Id;
+            context.ResponseSchema = prompt.ResponseSchema;
             var rendered = prompt.Content.Replace("{{content}}", context.PreprocessedContent ?? context.RawContent);
             context.Prompt = rendered;
 

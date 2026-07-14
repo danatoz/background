@@ -7,5 +7,6 @@ public class PipelineContext
     public string? PreprocessedContent { get; set; }
     public string? Prompt { get; set; }
     public string? LlmResponse { get; set; }
+    public string? ResponseSchema { get; set; }
     public string? ProcessedJson { get; set; }
 }
