@@ -48,8 +48,10 @@ public class JobProcessingWorker : BackgroundService
                 _logger.LogInformation(
                     "Claimed {Count} messages for processing", messages.Count);
 
-                var processingTasks = messages.Select(msg => ProcessMessageAsync(msg, stoppingToken));
-                await Task.WhenAll(processingTasks);
+                foreach (var msg in messages)
+                {
+                    _ = ProcessMessageAsync(msg, stoppingToken);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -86,7 +88,7 @@ public class JobProcessingWorker : BackgroundService
             }
             catch (OperationCanceledException)
             {
-                throw;
+                _logger.LogInformation("Message {MessageId} processing was cancelled", message.Id);
             }
             catch (Exception ex)
             {
