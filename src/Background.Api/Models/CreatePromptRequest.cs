@@ -15,4 +15,5 @@ public record CreatePromptRequest(
     string? Tags,
     string? ResponseSchema,
     string? Provider,
-    bool IsActive);
+    bool IsActive,
+    string? FolderFilter);

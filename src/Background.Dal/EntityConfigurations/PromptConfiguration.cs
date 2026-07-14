@@ -57,10 +57,15 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(x => x.IsActive)
             .HasDefaultValue(false);
 
+        builder.Property(x => x.FolderFilter)
+            .HasMaxLength(200);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
         builder.HasIndex(x => new { x.Name, x.Version })
             .IsUnique();
+
+        builder.HasIndex(x => new { x.FolderFilter, x.IsActive });
     }
 }

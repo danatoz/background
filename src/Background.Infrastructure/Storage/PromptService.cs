@@ -37,7 +37,7 @@ public class PromptService
 
         _db.Prompts.Add(prompt);
         await _db.SaveChangesAsync(ct);
-        _cache.Invalidate(prompt.Name);
+        _cache.InvalidateAll();
         return prompt;
     }
 
@@ -56,6 +56,7 @@ public class PromptService
         existing.Description = updated.Description;
         existing.Tags = updated.Tags;
         existing.ResponseSchema = updated.ResponseSchema;
+        existing.FolderFilter = updated.FolderFilter;
         existing.Provider = updated.Provider;
 
         if (updated.IsActive && !existing.IsActive)
@@ -64,7 +65,7 @@ public class PromptService
         existing.IsActive = updated.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
-        _cache.Invalidate(existing.Name);
+        _cache.InvalidateAll();
         return existing;
     }
 

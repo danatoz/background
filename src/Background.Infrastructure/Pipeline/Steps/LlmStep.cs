@@ -36,7 +36,13 @@ public sealed class LlmStep : IProcessingStep
     {
         try
         {
-            var prompt = await _promptCache.GetActiveAsync(_options.PromptName, ct);
+            Prompt? prompt = null;
+
+            if (!string.IsNullOrEmpty(message.EmailMetadata?.Folder))
+                prompt = await _promptCache.GetActiveByFolderAsync(message.EmailMetadata.Folder, ct);
+
+            prompt ??= await _promptCache.GetActiveAsync(_options.PromptName, ct);
+
             if (prompt is null)
             {
                 _logger.LogError("Active prompt '{PromptName}' not found", _options.PromptName);

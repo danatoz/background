@@ -14,6 +14,7 @@ public record PromptSummaryResponse(
     int? Seed,
     string? Description,
     string? Tags,
+    string? FolderFilter,
     string Provider,
     bool IsActive,
     DateTime CreatedAt,
@@ -22,6 +23,6 @@ public record PromptSummaryResponse(
     public static PromptSummaryResponse From(Prompt p) => new(
         p.Id, p.Name, p.Version, p.ModelName, p.Temperature,
         p.MaxTokens, p.ResponseFormat, p.TopP, p.Seed,
-        p.Description, p.Tags,
+        p.Description, p.Tags, p.FolderFilter,
         p.Provider, p.IsActive, p.CreatedAt, p.UpdatedAt);
 }

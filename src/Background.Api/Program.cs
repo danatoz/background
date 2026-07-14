@@ -241,6 +241,7 @@ app.MapPost("/prompts", async (
             Description = request.Description,
             Tags = request.Tags,
             ResponseSchema = request.ResponseSchema,
+            FolderFilter = request.FolderFilter,
             Provider = request.Provider ?? "ChatCompletion",
             IsActive = request.IsActive,
         };
@@ -278,6 +279,7 @@ app.MapPut("/prompts/{id:guid}", async (
             Description = request.Description,
             Tags = request.Tags,
             ResponseSchema = request.ResponseSchema,
+            FolderFilter = request.FolderFilter,
             Provider = request.Provider ?? "ChatCompletion",
             IsActive = request.IsActive,
         };

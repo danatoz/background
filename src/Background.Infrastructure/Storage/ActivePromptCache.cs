@@ -24,6 +24,22 @@ public sealed class ActivePromptCache : IActivePromptCache
         return await ReloadAsync(name, ct);
     }
 
+    public async Task<Prompt?> GetActiveByFolderAsync(string folder, CancellationToken ct = default)
+    {
+        var key = $"folder:{folder}";
+        if (_cache.TryGetValue(key, out var prompt))
+            return prompt;
+
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        prompt = await db.Prompts
+            .Where(p => p.FolderFilter == folder && p.IsActive)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+        _cache[key] = prompt;
+        return prompt;
+    }
+
     public async Task<Prompt?> ReloadAsync(string name, CancellationToken ct = default)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -39,5 +55,10 @@ public sealed class ActivePromptCache : IActivePromptCache
     public void Invalidate(string name)
     {
         _cache.TryRemove(name, out _);
+    }
+
+    public void InvalidateAll()
+    {
+        _cache.Clear();
     }
 }
