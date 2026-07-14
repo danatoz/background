@@ -9,11 +9,16 @@ namespace Background.Infrastructure.Pipeline.Steps;
 public sealed partial class PreprocessingStep : IProcessingStep
 {
     private readonly IStorageService _storage;
+    private readonly IEmailBodyExtractor _bodyExtractor;
     private readonly ILogger<PreprocessingStep> _logger;
 
-    public PreprocessingStep(IStorageService storage, ILogger<PreprocessingStep> logger)
+    public PreprocessingStep(
+        IStorageService storage,
+        IEmailBodyExtractor bodyExtractor,
+        ILogger<PreprocessingStep> logger)
     {
         _storage = storage;
+        _bodyExtractor = bodyExtractor;
         _logger = logger;
     }
 
@@ -24,7 +29,7 @@ public sealed partial class PreprocessingStep : IProcessingStep
     {
         try
         {
-            var raw = context.RawContent;
+            var raw = _bodyExtractor.ExtractBody(context.RawContent);
             var cleaned = StripHtml(raw);
             cleaned = CollapseWhitespace(cleaned);
             context.PreprocessedContent = cleaned.Trim();

@@ -99,6 +99,14 @@ internal sealed class ProcessingJobRepository : IProcessingJobRepository
                 """)
             .ToListAsync(ct);
 
+        if (messages.Count > 0)
+        {
+            var ids = messages.Select(m => m.Id).ToList();
+            await _context.Set<EmailMetadata>()
+                .Where(e => ids.Contains(e.Id))
+                .LoadAsync(ct);
+        }
+
         return messages;
     }
 

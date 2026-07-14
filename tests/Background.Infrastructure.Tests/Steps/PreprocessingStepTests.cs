@@ -10,12 +10,14 @@ namespace Background.Infrastructure.Tests.Steps;
 public sealed class PreprocessingStepTests
 {
     private readonly IStorageService _storage = Substitute.For<IStorageService>();
+    private readonly IEmailBodyExtractor _bodyExtractor = Substitute.For<IEmailBodyExtractor>();
     private readonly ILogger<PreprocessingStep> _logger = Substitute.For<ILogger<PreprocessingStep>>();
     private readonly PreprocessingStep _step;
 
     public PreprocessingStepTests()
     {
-        _step = new PreprocessingStep(_storage, _logger);
+        _bodyExtractor.ExtractBody(Arg.Any<string>()).Returns(x => x.Arg<string>());
+        _step = new PreprocessingStep(_storage, _bodyExtractor, _logger);
     }
 
     [Fact]
