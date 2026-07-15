@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Background.Dal.Entities;
 using Json.Schema;
-using JsonSchema = Json.Schema.JsonSchema;
 using Microsoft.Extensions.Logging;
 
 namespace Background.Infrastructure.Pipeline.Steps;

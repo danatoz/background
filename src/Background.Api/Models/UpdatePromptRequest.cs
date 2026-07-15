@@ -1,4 +1,4 @@
-using Background.Dal.Entities;
+using System.Text.Json.Nodes;
 
 namespace Background.Api.Models;
 
@@ -15,7 +15,7 @@ public record UpdatePromptRequest(
     int? Seed,
     string? Description,
     string? Tags,
-    JsonSchema? ResponseSchema,
+    JsonNode? ResponseSchema,
     string? Provider,
     bool IsActive,
     string? FolderFilter);

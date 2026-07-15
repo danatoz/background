@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Background.Dal.Entities;
 
 namespace Background.Api.Models;
@@ -16,7 +17,7 @@ public record PromptDetailResponse(
     int? Seed,
     string? Description,
     string? Tags,
-    JsonSchema? ResponseSchema,
+    JsonNode? ResponseSchema,
     string? FolderFilter,
     string Provider,
     bool IsActive,

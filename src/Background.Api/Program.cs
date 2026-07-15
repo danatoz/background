@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Background.AI;
 using Background.Api.Models;
 using Background.Api.Workers;
@@ -232,6 +233,11 @@ app.MapPost("/prompts", async (
             return Results.BadRequest("TopP must be between 0.0 and 0.99.");
         }
 
+        if (request.ResponseSchema is not null and not JsonObject)
+        {
+            return Results.BadRequest(new { error = "ResponseSchema must be a JSON object" });
+        }
+
         var prompt = new Prompt
         {
             Name = request.Name,
@@ -269,6 +275,11 @@ app.MapPut("/prompts/{id:guid}", async (
         var existing = await promptService.GetByIdAsync(id, ct);
         if (existing is null)
             return Results.NotFound(new { error = "Prompt not found" });
+
+        if (request.ResponseSchema is not null and not JsonObject)
+        {
+            return Results.BadRequest(new { error = "ResponseSchema must be a JSON object" });
+        }
 
         var updated = new Prompt
         {
