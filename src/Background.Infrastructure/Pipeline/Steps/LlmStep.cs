@@ -50,7 +50,7 @@ public sealed class LlmStep : IProcessingStep
             }
 
             message.PromptId = prompt.Id;
-            context.ResponseSchema = prompt.ResponseSchema;
+            context.ResponseSchema = prompt.ResponseSchema?.Raw;
             var rendered = prompt.Content.Replace("{{content}}", context.PreprocessedContent ?? context.RawContent);
             context.Prompt = rendered;
 
@@ -75,7 +75,7 @@ public sealed class LlmStep : IProcessingStep
                 MaxTokens = prompt.MaxTokens,
                 TopP = prompt.TopP,
                 Seed = prompt.Seed,
-                ResponseSchema = prompt.ResponseSchema,
+                ResponseSchema = prompt.ResponseSchema?.Raw,
                 ResponseFormat = responseFormat,
                 Provider = prompt.Provider,
             }, ct);

@@ -15,7 +15,7 @@ public class Prompt
     public int? Seed { get; set; }
     public string? Description { get; set; }
     public string? Tags { get; set; }
-    public string? ResponseSchema { get; set; }
+    public JsonSchema? ResponseSchema { get; set; }
     public string? FolderFilter { get; set; }
     public string Provider { get; set; } = "ChatCompletion";
     public bool IsActive { get; set; }

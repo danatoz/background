@@ -1,3 +1,5 @@
+using Background.Dal.Entities;
+
 namespace Background.Api.Models;
 
 public record UpdatePromptRequest(
@@ -13,7 +15,7 @@ public record UpdatePromptRequest(
     int? Seed,
     string? Description,
     string? Tags,
-    string? ResponseSchema,
+    JsonSchema? ResponseSchema,
     string? Provider,
     bool IsActive,
     string? FolderFilter);

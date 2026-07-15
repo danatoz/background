@@ -1,6 +1,7 @@
 using Background.Dal.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Background.Dal.EntityConfigurations;
 
@@ -47,7 +48,10 @@ public class PromptConfiguration : IEntityTypeConfiguration<Prompt>
         builder.Property(x => x.Tags)
             .HasMaxLength(500);
 
-        builder.Property(x => x.ResponseSchema);
+        builder.Property(x => x.ResponseSchema)
+            .HasConversion(new ValueConverter<JsonSchema?, string?>(
+                v => v.HasValue ? v.Value.Raw : null,
+                v => v != null ? new JsonSchema(v) : null));
 
         builder.Property(x => x.Provider)
             .HasMaxLength(50)

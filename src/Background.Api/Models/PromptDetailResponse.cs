@@ -16,7 +16,7 @@ public record PromptDetailResponse(
     int? Seed,
     string? Description,
     string? Tags,
-    string? ResponseSchema,
+    JsonSchema? ResponseSchema,
     string? FolderFilter,
     string Provider,
     bool IsActive,
